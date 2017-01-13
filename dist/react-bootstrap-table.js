@@ -576,6 +576,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	              onSelectAllRow: this.handleSelectAllRow,
 	              bordered: this.props.bordered,
 	              condensed: this.props.condensed,
+	              resizable: this.props.resizable,
+	              resizerOptions: this.props.resizerOptions,
 	              isFiltered: this.filter ? true : false,
 	              isSelectAll: isSelectAll },
 	            this.props.children
@@ -668,7 +670,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var _this3 = this;
 
 	      this.setState({ expanding: expanding }, function () {
-	        _this3.props.adjustHeaderWidth();
+	        _this3._adjustHeaderWidth();
 	      });
 	    }
 	  }, {
@@ -1822,6 +1824,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	}
 
+	var RESIZE_DEFAULTS = {
+	  liveDrag: true,
+	  gripInnerHtml: '<div class="grip"></div>',
+	  draggingClass: 'dragging',
+	  resizeMode: 'fit',
+	  partialRefresh: true,
+	  removePadding: false
+	};
+
 	var TableHeader = function (_Component2) {
 	  _inherits(TableHeader, _Component2);
 
@@ -1846,36 +1857,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	  _createClass(TableHeader, [{
 	    key: 'componentDidMount',
 	    value: function componentDidMount() {
-	      this.enableResize();
+	      if (this.props.resizable) {
+	        this.enableResize();
+	      }
 	    }
 	  }, {
 	    key: 'componentWillUnmount',
 	    value: function componentWillUnmount() {
-	      this.disableResize();
+	      if (this.props.resizable) {
+	        this.disableResize();
+	      }
 	    }
 	  }, {
 	    key: 'componentWillUpdate',
 	    value: function componentWillUpdate() {
-	      this.disableResize();
+	      if (this.props.resizable) {
+	        this.disableResize();
+	      }
 	    }
 	  }, {
 	    key: 'componentDidUpdate',
 	    value: function componentDidUpdate() {
-	      this.enableResize();
+	      if (this.props.resizable) {
+	        this.enableResize();
+	      }
 	    }
 	  }, {
 	    key: 'enableResize',
 	    value: function enableResize() {
 	      var normalRemote = document.querySelector('#remote-resizable');
-	      var options = {
-	        liveDrag: true,
-	        gripInnerHtml: '<div class="grip"></div>',
-	        draggingClass: 'dragging',
-	        resizeMode: 'fit',
-	        remoteTable: normalRemote,
-	        partialRefresh: true,
-	        removePadding: false
-	      };
+	      var options = this.props.resizerOptions || RESIZE_DEFAULTS;
+	      options.remoteTable = normalRemote;
 	      if (!this.resizer) {
 	        this.resizer = new _columnResizer2.default(_reactDom2.default.findDOMNode(this).querySelector('#parent-resizable'), options);
 	      } else {
@@ -2006,6 +2018,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  isFiltered: _react.PropTypes.bool,
 	  isSelectAll: _react.PropTypes.oneOf([true, 'indeterminate', false]),
 	  sortIndicator: _react.PropTypes.bool,
+	  resizable: _react.PropTypes.bool,
+	  resizerOptions: _react.PropTypes.object,
 	  customComponent: _react.PropTypes.func,
 	  colGroups: _react.PropTypes.element
 	};
@@ -2022,6 +2036,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  __REACT_HOT_LOADER__.register(Checkbox, 'Checkbox', '/Users/jjglyn/workspace-oss/react-bootstrap-table/src/TableHeader.js');
 
 	  __REACT_HOT_LOADER__.register(getSortOrder, 'getSortOrder', '/Users/jjglyn/workspace-oss/react-bootstrap-table/src/TableHeader.js');
+
+	  __REACT_HOT_LOADER__.register(RESIZE_DEFAULTS, 'RESIZE_DEFAULTS', '/Users/jjglyn/workspace-oss/react-bootstrap-table/src/TableHeader.js');
 
 	  __REACT_HOT_LOADER__.register(TableHeader, 'TableHeader', '/Users/jjglyn/workspace-oss/react-bootstrap-table/src/TableHeader.js');
 
