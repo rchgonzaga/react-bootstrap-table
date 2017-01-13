@@ -1,5 +1,6 @@
 import React, { Component, PropTypes } from 'react';
 import ReactDOM from 'react-dom';
+import ColumnResizer from '@monsantoit/column-resizer';
 import Const from './Const';
 import classSet from 'classnames';
 import SelectRowHeaderColumn from './SelectRowHeaderColumn';
@@ -33,6 +34,47 @@ function getSortOrder(sortList, field, enableSort) {
 }
 
 class TableHeader extends Component {
+
+  componentDidMount() {
+    this.enableResize();
+  }
+
+  componentWillUnmount() {
+    this.disableResize();
+  }
+
+  componentWillUpdate() {
+    this.disableResize();
+  }
+
+  componentDidUpdate() {
+    this.enableResize();
+  }
+
+  enableResize() {
+    const normalRemote = document.querySelector('#remote-resizable');
+    const options = {
+      liveDrag: true,
+      gripInnerHtml: '<div class="grip"></div>',
+      draggingClass: 'dragging',
+      resizeMode: 'fit',
+      remoteTable: normalRemote,
+      partialRefresh: true,
+      removePadding: false
+    };
+    if (!this.resizer) {
+      this.resizer = new ColumnResizer(
+        ReactDOM.findDOMNode(this).querySelector('#parent-resizable'), options);
+    } else {
+      this.resizer.reset(options);
+    }
+  }
+
+  disableResize() {
+    if (this.resizer) {
+      this.resizer.reset({ disable: true });
+    }
+  }
 
   render() {
     const containerClasses = classSet(
@@ -86,7 +128,7 @@ class TableHeader extends Component {
 
     return (
       <div ref='container' className={ containerClasses } style={ this.props.style }>
-        <table className={ tableClasses }>
+        <table id='parent-resizable' className={ tableClasses }>
           { React.cloneElement(this.props.colGroups, { ref: 'headerGrp' }) }
           <thead ref='header'>
             { trs }

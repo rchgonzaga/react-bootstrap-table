@@ -166,7 +166,7 @@ class TableBody extends Component {
       <div ref='container'
         className={ classSet('react-bs-container-body', this.props.bodyContainerClass) }
         style={ this.props.style }>
-        <table className={ tableClasses }>
+        <table id='remote-resizable' className={ tableClasses }>
           { React.cloneElement(tableHeader, { ref: 'header' }) }
           <tbody ref='tbody'>
             { tableRows }
