@@ -309,6 +309,8 @@ class BootstrapTable extends Component {
             onSelectAllRow={ this.handleSelectAllRow }
             bordered={ this.props.bordered }
             condensed={ this.props.condensed }
+            resizable={ this.props.resizable }
+            resizerOptions={ this.props.resizerOptions }
             isFiltered={ this.filter ? true : false }
             isSelectAll={ isSelectAll }>
             { this.props.children }
@@ -400,7 +402,7 @@ class BootstrapTable extends Component {
 
   handleExpandRow = expanding => {
     this.setState({ expanding }, () => {
-      this.props.adjustHeaderWidth();
+      this._adjustHeaderWidth();
     });
   }
 

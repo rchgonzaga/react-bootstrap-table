@@ -1,6 +1,6 @@
 {
   "name": "@monsantoit/react-bootstrap-table",
-  "version": "2.9.0",
+  "version": "1.0.0",
   "description": "Fork of Allen Fang's react-bootstrap-table",
   "main": "./lib/index.js",
   "repository": {

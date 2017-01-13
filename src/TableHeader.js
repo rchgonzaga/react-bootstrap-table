@@ -33,35 +33,45 @@ function getSortOrder(sortList, field, enableSort) {
   }
 }
 
+const RESIZE_DEFAULTS = {
+  liveDrag: true,
+  gripInnerHtml: '<div class="grip"></div>',
+  draggingClass: 'dragging',
+  resizeMode: 'fit',
+  partialRefresh: true,
+  removePadding: false
+};
+
 class TableHeader extends Component {
 
   componentDidMount() {
-    this.enableResize();
+    if (this.props.resizable) {
+      this.enableResize();
+    }
   }
 
   componentWillUnmount() {
-    this.disableResize();
+    if (this.props.resizable) {
+      this.disableResize();
+    }
   }
 
   componentWillUpdate() {
-    this.disableResize();
+    if (this.props.resizable) {
+      this.disableResize();
+    }
   }
 
   componentDidUpdate() {
-    this.enableResize();
+    if (this.props.resizable) {
+      this.enableResize();
+    }
   }
 
   enableResize() {
     const normalRemote = document.querySelector('#remote-resizable');
-    const options = {
-      liveDrag: true,
-      gripInnerHtml: '<div class="grip"></div>',
-      draggingClass: 'dragging',
-      resizeMode: 'fit',
-      remoteTable: normalRemote,
-      partialRefresh: true,
-      removePadding: false
-    };
+    const options = this.props.resizerOptions || RESIZE_DEFAULTS;
+    options.remoteTable = normalRemote;
     if (!this.resizer) {
       this.resizer = new ColumnResizer(
         ReactDOM.findDOMNode(this).querySelector('#parent-resizable'), options);
@@ -181,6 +191,8 @@ TableHeader.propTypes = {
   isFiltered: PropTypes.bool,
   isSelectAll: PropTypes.oneOf([ true, 'indeterminate', false ]),
   sortIndicator: PropTypes.bool,
+  resizable: PropTypes.bool,
+  resizerOptions: PropTypes.object,
   customComponent: PropTypes.func,
   colGroups: PropTypes.element
 };
