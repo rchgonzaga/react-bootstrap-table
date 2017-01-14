@@ -1,6 +1,5 @@
 import React, { Component, PropTypes } from 'react';
 import ReactDOM from 'react-dom';
-import ColumnResizer from '@monsantoit/column-resizer';
 import Const from './Const';
 import classSet from 'classnames';
 import SelectRowHeaderColumn from './SelectRowHeaderColumn';
@@ -72,10 +71,7 @@ class TableHeader extends Component {
     const normalRemote = document.querySelector('#remote-resizable');
     const options = this.props.resizerOptions || RESIZE_DEFAULTS;
     options.remoteTable = normalRemote;
-    if (!this.resizer) {
-      this.resizer = new ColumnResizer(
-        ReactDOM.findDOMNode(this).querySelector('#parent-resizable'), options);
-    } else {
+    if (this.resizer) {
       this.resizer.reset(options);
     }
   }
