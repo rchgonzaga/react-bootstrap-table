@@ -37,6 +37,10 @@ class BootstrapTable extends Component {
       currPage = this.props.options.pageStartIndex;
     }
 
+    this._adjustHeaderWidth = this._adjustHeaderWidth.bind(this);
+    this._adjustHeight = this._adjustHeight.bind(this);
+    this._adjustTable = this._adjustTable.bind(this);
+
     this.state = {
       data: this.getTableData(),
       currPage: currPage,
@@ -340,6 +344,7 @@ class BootstrapTable extends Component {
             onRowMouseOut={ this.handleRowMouseOut }
             onSelectRow={ this.handleSelectRow }
             noDataText={ this.props.options.noDataText }
+            withoutNoDataText={ this.props.options.withoutNoDataText }
             expanding={ this.state.expanding }
             onExpand={ this.handleExpandRow }
             beforeShowError={ this.props.options.beforeShowError } />
@@ -952,14 +957,14 @@ class BootstrapTable extends Component {
     this.refs.header.refs.container.scrollLeft = e.currentTarget.scrollLeft;
   }
 
-  _adjustTable = () => {
+  _adjustTable() {
     if (!this.props.printable) {
       this._adjustHeaderWidth();
     }
     this._adjustHeight();
   }
 
-  _adjustHeaderWidth = () => {
+  _adjustHeaderWidth() {
     const header = this.refs.header.getHeaderColGrouop();
     const headerContainer = this.refs.header.refs.container;
     const tbody = this.refs.body.refs.tbody;
@@ -998,7 +1003,7 @@ class BootstrapTable extends Component {
     }
   }
 
-  _adjustHeight = () => {
+  _adjustHeight() {
     const { height } = this.props;
     let { maxHeight } = this.props;
     if ((typeof height === 'number' && !isNaN(height)) || height.indexOf('%') === -1) {
@@ -1135,6 +1140,7 @@ BootstrapTable.propTypes = {
     onExportToCSV: React.PropTypes.func,
     onCellEdit: React.PropTypes.func,
     noDataText: PropTypes.oneOfType([ PropTypes.string, PropTypes.object ]),
+    withoutNoDataText: React.PropTypes.bool,
     handleConfirmDeleteRow: PropTypes.func,
     prePage: PropTypes.string,
     nextPage: PropTypes.string,
@@ -1239,6 +1245,7 @@ BootstrapTable.defaultProps = {
     hideSizePerPage: false,
     onSizePerPageList: undefined,
     noDataText: undefined,
+    withoutNoDataText: false,
     handleConfirmDeleteRow: undefined,
     prePage: Const.PRE_PAGE,
     nextPage: Const.NEXT_PAGE,
