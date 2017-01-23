@@ -131,6 +131,7 @@ class TableBody extends Component {
         onRowMouseOver={ this.handleRowMouseOver }
         onRowMouseOut={ this.handleRowMouseOut }
         onSelectRow={ this.handleSelectRow }
+        onExpandRow={ this.handleClickCell }
         unselectableRow={ disable }>
         { selectRowColumn }
         { tableColumns }
@@ -218,7 +219,7 @@ class TableBody extends Component {
     }
   }
 
-  handleClickCell = (rowIndex, columnIndex) => {
+  handleClickCell = (rowIndex, columnIndex = -1) => {
     const {
       columns,
       keyField,
@@ -229,11 +230,12 @@ class TableBody extends Component {
       }
     } = this.props;
     const selectRowAndExpand = this._isSelectRowDefined() && !clickToExpand ? false : true;
+    columnIndex = this._isSelectRowDefined() ? columnIndex - 1 : columnIndex;
 
     if (expandableRow &&
       selectRowAndExpand &&
       (expandBy === Const.EXPAND_BY_ROW ||
-      (expandBy === Const.EXPAND_BY_COL && columns[columnIndex].expandable))) {
+      (columnIndex > 0 && expandBy === Const.EXPAND_BY_COL && columns[columnIndex].expandable))) {
       const rowKey = this.props.data[rowIndex - 1][keyField];
       let expanding = this.props.expanding;
       if (expanding.indexOf(rowKey) > -1) {
