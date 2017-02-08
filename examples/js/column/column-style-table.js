@@ -11,7 +11,7 @@ function addProducts(quantity) {
     const id = startId + i;
     products.push({
       id: id,
-      name: 'Item name aaaaaaaaaaaaaa' + id,
+      name: 'The white-space property specifies how white-space inside an element is handled, default is normal ' + id,
       price: 2100 + i
     });
   }
@@ -19,13 +19,13 @@ function addProducts(quantity) {
 
 addProducts(5);
 
-export default class ColumnWidthTable extends React.Component {
+export default class ColumnStyleTable extends React.Component {
   render() {
     return (
       <BootstrapTable data={ products }>
           <TableHeaderColumn dataField='id' isKey={ true }>Product ID</TableHeaderColumn>
-          <TableHeaderColumn dataField='name' width='50%'>Product Name</TableHeaderColumn>
-          <TableHeaderColumn dataField='price' width='90'>Product Price</TableHeaderColumn>
+          <TableHeaderColumn dataField='name' tdStyle={ { whiteSpace: 'normal' } }>Product Name</TableHeaderColumn>
+          <TableHeaderColumn dataField='price' thStyle={ { 'fontWeight': 'lighter' } }>Product Price</TableHeaderColumn>
       </BootstrapTable>
     );
   }
