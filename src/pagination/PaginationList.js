@@ -75,7 +75,8 @@ class PaginationList extends Component {
       sizePerPageList,
       paginationShowsTotal,
       pageStartIndex,
-      paginationPanel
+      paginationPanel,
+      hidePageListOnlyOnePage
     } = this.props;
     this.totalPages = Math.ceil(dataSize / sizePerPage);
     this.lastPage = this.props.pageStartIndex + this.totalPages - 1;
@@ -110,6 +111,7 @@ class PaginationList extends Component {
       }
     });
 
+    const hidePageList = hidePageListOnlyOnePage && this.totalPages === 1 ? 'none' : 'block';
     return (
       <div className='row' style={ { marginTop: 15 } }>
         {
@@ -118,7 +120,8 @@ class PaginationList extends Component {
             <div className='col-md-6 col-xs-6 col-sm-6 col-lg-6'>
               { total }{ sizePerPageList.length > 1 ? dropdown : null }
             </div>
-            <div className='col-md-6 col-xs-6 col-sm-6 col-lg-6'>
+            <div style={ { display: hidePageList } }
+              className='col-md-6 col-xs-6 col-sm-6 col-lg-6'>
               { pageBtns }
             </div>
           </div>
@@ -203,8 +206,21 @@ class PaginationList extends Component {
         const isDisabled = (isStart(page, this.props) || isEnd(page, this.props)) ?
           true :
           false;
+        let title = page + '';
+
+        if (page === this.props.nextPage) {
+          title = this.props.nextPageTitle;
+        } else if (page === this.props.prePage) {
+          title = this.props.prePageTitle;
+        } else if (page === this.props.firstPage) {
+          title = this.props.firstPageTitle;
+        } else if (page === this.props.lastPage) {
+          title = this.props.lastPageTitle;
+        }
+
         return (
           <PageButton key={ page }
+            title={ title }
             changePage={ this.changePage }
             active={ isActive }
             disable={ isDisabled }>
@@ -281,7 +297,12 @@ PaginationList.propTypes = {
   alwaysShowAllBtns: PropTypes.bool,
   withFirstAndLast: PropTypes.bool,
   sizePerPageDropDown: PropTypes.func,
-  paginationPanel: PropTypes.func
+  paginationPanel: PropTypes.func,
+  prePageTitle: PropTypes.string,
+  nextPageTitle: PropTypes.string,
+  firstPageTitle: PropTypes.string,
+  lastPageTitle: PropTypes.string,
+  hidePageListOnlyOnePage: PropTypes.bool
 };
 
 PaginationList.defaultProps = {

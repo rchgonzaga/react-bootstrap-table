@@ -328,7 +328,11 @@ class BootstrapTable extends Component {
     const toolBar = this.renderToolBar();
     const tableFilter = this.renderTableFilter(columns);
     const isSelectAll = this.isSelectAll();
-    const colGroups = Util.renderColGroup(columns, this.props.selectRow);
+    const expandColumnOptions = this.props.expandColumnOptions;
+    if (typeof expandColumnOptions.expandColumnBeforeSelectColumn === 'undefined') {
+      expandColumnOptions.expandColumnBeforeSelectColumn = true;
+    }
+    const colGroups = Util.renderColGroup(columns, this.props.selectRow, expandColumnOptions);
     let sortIndicator = this.props.options.sortIndicator;
     if (typeof this.props.options.sortIndicator === 'undefined') sortIndicator = true;
     const { paginationPosition = Const.PAGINATION_POS_BOTTOM } = this.props.options;
@@ -364,7 +368,10 @@ class BootstrapTable extends Component {
             resizerOptions={ this.props.resizerOptions }
             isFiltered={ this.filter ? true : false }
             isSelectAll={ isSelectAll }
-            reset={ this.state.reset }>
+            reset={ this.state.reset }
+            expandColumnVisible={ expandColumnOptions.expandColumnVisible }
+            expandColumnComponent={ expandColumnOptions.expandColumnComponent }
+            expandColumnBeforeSelectColumn={ expandColumnOptions.expandColumnBeforeSelectColumn }>
             { this.props.children }
           </TableHeader>
           <TableBody ref='body'
@@ -384,6 +391,7 @@ class BootstrapTable extends Component {
             keyField={ this.store.getKeyField() }
             condensed={ this.props.condensed }
             selectRow={ this.props.selectRow }
+            expandColumnOptions={ this.props.expandColumnOptions }
             cellEdit={ this.props.cellEdit }
             selectedRowKeys={ this.state.selectedRowKeys }
             onRowClick={ this.handleRowClick }
@@ -904,6 +912,7 @@ class BootstrapTable extends Component {
         keys.push({
           field: column.props.dataField,
           format: column.props.csvFormat,
+          extraData: column.props.csvFormatExtraData,
           header: column.props.csvHeader || column.props.dataField,
           row: Number(column.props.row) || 0,
           rowSpan: Number(column.props.rowSpan) || 1,
@@ -1000,8 +1009,13 @@ class BootstrapTable extends Component {
             nextPage={ options.nextPage || Const.NEXT_PAGE }
             firstPage={ options.firstPage || Const.FIRST_PAGE }
             lastPage={ options.lastPage || Const.LAST_PAGE }
+            prePageTitle={ options.prePageTitle || Const.PRE_PAGE_TITLE }
+            nextPageTitle={ options.nextPageTitle || Const.NEXT_PAGE_TITLE }
+            firstPageTitle={ options.firstPageTitle || Const.FIRST_PAGE_TITLE }
+            lastPageTitle={ options.lastPageTitle || Const.LAST_PAGE_TITLE }
             hideSizePerPage={ options.hideSizePerPage }
             sizePerPageDropDown={ options.sizePerPageDropDown }
+            hidePageListOnlyOnePage={ options.hidePageListOnlyOnePage }
             paginationPanel={ options.paginationPanel }
             open={ false }/>
         </div>
@@ -1314,6 +1328,7 @@ BootstrapTable.propTypes = {
       Const.PAGINATION_POS_BOTH
     ]),
     hideSizePerPage: PropTypes.bool,
+    hidePageListOnlyOnePage: PropTypes.bool,
     alwaysShowAllBtns: PropTypes.bool,
     withFirstAndLast: PropTypes.bool,
     onSortChange: PropTypes.func,
@@ -1331,6 +1346,10 @@ BootstrapTable.propTypes = {
     nextPage: PropTypes.string,
     firstPage: PropTypes.string,
     lastPage: PropTypes.string,
+    prePageTitle: PropTypes.string,
+    nextPageTitle: PropTypes.string,
+    firstPageTitle: PropTypes.string,
+    lastPageTitle: PropTypes.string,
     searchDelayTime: PropTypes.number,
     exportCSVText: PropTypes.string,
     insertText: PropTypes.string,
@@ -1367,12 +1386,23 @@ BootstrapTable.propTypes = {
   csvFileName: PropTypes.oneOfType([ PropTypes.string, PropTypes.func ]),
   ignoreSinglePage: PropTypes.bool,
   expandableRow: PropTypes.func,
-  expandComponent: PropTypes.func
+  expandComponent: PropTypes.func,
+  expandColumnOptions: PropTypes.shape({
+    columnWidth: PropTypes.oneOfType([ PropTypes.number, PropTypes.string ]),
+    expandColumnVisible: PropTypes.bool,
+    expandColumnComponent: PropTypes.func,
+    expandColumnBeforeSelectColumn: PropTypes.bool
+  })
 };
 BootstrapTable.defaultProps = {
   scrollTop: undefined,
   expandComponent: undefined,
   expandableRow: undefined,
+  expandColumnOptions: {
+    expandColumnVisible: false,
+    expandColumnComponent: undefined,
+    expandColumnBeforeSelectColumn: true
+  },
   height: '100%',
   maxHeight: undefined,
   striped: false,
@@ -1446,6 +1476,7 @@ BootstrapTable.defaultProps = {
     paginationSize: Const.PAGINATION_SIZE,
     paginationPosition: Const.PAGINATION_POS_BOTTOM,
     hideSizePerPage: false,
+    hidePageListOnlyOnePage: false,
     alwaysShowAllBtns: false,
     withFirstAndLast: true,
     onSizePerPageList: undefined,
@@ -1456,6 +1487,10 @@ BootstrapTable.defaultProps = {
     nextPage: Const.NEXT_PAGE,
     firstPage: Const.FIRST_PAGE,
     lastPage: Const.LAST_PAGE,
+    prePageTitle: Const.PRE_PAGE_TITLE,
+    nextPageTitle: Const.NEXT_PAGE_TITLE,
+    firstPageTitle: Const.FIRST_PAGE_TITLE,
+    lastPageTitle: Const.LAST_PAGE_TITLE,
     pageStartIndex: undefined,
     searchDelayTime: undefined,
     exportCSVText: Const.EXPORT_CSV_TEXT,
