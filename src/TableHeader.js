@@ -13,9 +13,9 @@ class Checkbox extends Component {
   render() {
     return (
       <input className='react-bs-select-all'
-        type='checkbox'
-        checked={ this.props.checked }
-        onChange={ this.props.onChange } />
+             type='checkbox'
+             checked={ this.props.checked }
+             onChange={ this.props.onChange } />
     );
   }
 }
@@ -32,55 +32,7 @@ function getSortOrder(sortList, field, enableSort) {
   }
 }
 
-const RESIZE_DEFAULTS = {
-  liveDrag: true,
-  gripInnerHtml: '<div class="grip"></div>',
-  draggingClass: 'dragging',
-  resizeMode: 'fit',
-  partialRefresh: true,
-  removePadding: false
-};
-
 class TableHeader extends Component {
-
-  componentDidMount() {
-    if (this.props.resizable) {
-      this.enableResize();
-    }
-  }
-
-  componentWillUnmount() {
-    if (this.props.resizable) {
-      this.disableResize();
-    }
-  }
-
-  componentWillUpdate() {
-    if (this.props.resizable) {
-      this.disableResize();
-    }
-  }
-
-  componentDidUpdate() {
-    if (this.props.resizable) {
-      this.enableResize();
-    }
-  }
-
-  enableResize() {
-    const normalRemote = document.querySelector('#remote-resizable');
-    const options = this.props.resizerOptions || RESIZE_DEFAULTS;
-    options.remoteTable = normalRemote;
-    if (this.resizer) {
-      this.resizer.reset(options);
-    }
-  }
-
-  disableResize() {
-    if (this.resizer) {
-      this.resizer.reset({ disable: true });
-    }
-  }
 
   render() {
     const containerClasses = classSet(
@@ -102,14 +54,14 @@ class TableHeader extends Component {
     rows[0] = [];
     rows[0].push( [
       this.props.expandColumnVisible &&
-        this.props.expandColumnBeforeSelectColumn &&
-          <th className='react-bs-table-expand-cell'> </th>
+      this.props.expandColumnBeforeSelectColumn &&
+      <th className='react-bs-table-expand-cell'> </th>
     ], [
       this.renderSelectRowHeader(rowCount + 1, rowKey++)
     ], [
       this.props.expandColumnVisible &&
-        !this.props.expandColumnBeforeSelectColumn &&
-          <th className='react-bs-table-expand-cell'> </th>
+      !this.props.expandColumnBeforeSelectColumn &&
+      <th className='react-bs-table-expand-cell'> </th>
     ]);
     const { sortIndicator, sortList, onSort, reset } = this.props;
 
@@ -124,11 +76,11 @@ class TableHeader extends Component {
       if ((rowSpan + rowIndex) === (rowCount + 1)) {
         rows[rowIndex].push(React.cloneElement(
           elm, { reset, key: rowKey++, onSort, sort, sortIndicator, isOnlyHead: false }
-          ));
+        ));
       } else {
         rows[rowIndex].push(React.cloneElement(
           elm, { key: rowKey++, isOnlyHead: true }
-          ));
+        ));
       }
     });
 
@@ -142,10 +94,10 @@ class TableHeader extends Component {
 
     return (
       <div ref='container' className={ containerClasses } style={ this.props.style }>
-        <table id='parent-resizable' className={ tableClasses }>
+        <table className={ tableClasses }>
           { React.cloneElement(this.props.colGroups, { ref: 'headerGrp' }) }
           <thead ref='header'>
-            { trs }
+          { trs }
           </thead>
         </table>
       </div>
@@ -164,8 +116,8 @@ class TableHeader extends Component {
       return (
         <SelectRowHeaderColumn key={ rowKey } rowCount={ rowCount }>
           <CustomComponent type='checkbox' checked={ this.props.isSelectAll }
-            indeterminate={ this.props.isSelectAll === 'indeterminate' } disabled={ false }
-            onChange={ this.props.onSelectAllRow } rowIndex='Header'/>
+                           indeterminate={ this.props.isSelectAll === 'indeterminate' } disabled={ false }
+                           onChange={ this.props.onSelectAllRow } rowIndex='Header'/>
         </SelectRowHeaderColumn>
       );
     } else if (this.props.rowSelectType === Const.ROW_SELECT_SINGLE) {
@@ -197,8 +149,6 @@ TableHeader.propTypes = {
   isFiltered: PropTypes.bool,
   isSelectAll: PropTypes.oneOf([ true, 'indeterminate', false ]),
   sortIndicator: PropTypes.bool,
-  resizable: PropTypes.bool,
-  resizerOptions: PropTypes.object,
   customComponent: PropTypes.func,
   colGroups: PropTypes.element,
   reset: PropTypes.bool,
