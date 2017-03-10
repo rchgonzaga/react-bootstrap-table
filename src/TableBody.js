@@ -52,7 +52,7 @@ class TableBody extends Component {
       expandColSpan += 1;
     }
 
-    const tableRows = this.props.data.map(function(data, r) {
+    let tableRows = this.props.data.map(function(data, r) {
       const tableColumns = this.props.columns.map(function(column, i) {
         const fieldValue = data[column.name];
         const isFocusCell = r === y && i === x;
@@ -187,8 +187,9 @@ class TableBody extends Component {
       }
       return (result);
     }, this);
+
     if (tableRows.length === 0 && !this.props.withoutNoDataText) {
-      tableRows.push(
+      tableRows = [
         <TableRow key='##table-empty##'>
           <td data-toggle='collapse'
               colSpan={ this.props.columns.length + (isSelectRowDefined ? 1 : 0) }
@@ -196,7 +197,7 @@ class TableBody extends Component {
               { this.props.noDataText || Const.NO_DATA_TEXT }
           </td>
         </TableRow>
-      );
+      ];
     }
 
     return (

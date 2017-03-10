@@ -1027,6 +1027,8 @@ class BootstrapTable extends Component {
   renderToolBar() {
     const { exportCSV, selectRow, insertRow, deleteRow, search, children } = this.props;
     const enableShowOnlySelected = selectRow && selectRow.showOnlySelected;
+    const print = typeof this.props.options.printToolBar === 'undefined' ?
+      true : this.props.options.printToolBar;
     if (enableShowOnlySelected
       || insertRow
       || deleteRow
@@ -1061,7 +1063,7 @@ class BootstrapTable extends Component {
         } ];
       }
       return (
-        <div className='react-bs-table-tool-bar'>
+        <div className={ `react-bs-table-tool-bar ${ print ? '' : 'hidden-print' }` }>
           <ToolBar
             ref='toolbar'
             defaultSearch={ this.props.options.defaultSearch }
@@ -1377,7 +1379,8 @@ BootstrapTable.propTypes = {
     expandRowBgColor: PropTypes.string,
     expandBy: PropTypes.string,
     expanding: PropTypes.array,
-    beforeShowError: PropTypes.func
+    beforeShowError: PropTypes.func,
+    printToolBar: PropTypes.bool
   }),
   fetchInfo: PropTypes.shape({
     dataTotalSize: PropTypes.number
@@ -1519,7 +1522,8 @@ BootstrapTable.defaultProps = {
     expandRowBgColor: undefined,
     expandBy: Const.EXPAND_BY_ROW,
     expanding: [],
-    beforeShowError: undefined
+    beforeShowError: undefined,
+    printToolBar: true
   },
   fetchInfo: {
     dataTotalSize: 0
