@@ -189,10 +189,12 @@ class TableBody extends Component {
     }, this);
 
     if (tableRows.length === 0 && !this.props.withoutNoDataText) {
+      const colSpan = this.props.columns.filter(c => !c.hidden).length
+        + (isSelectRowDefined ? 1 : 0);
       tableRows = [
         <TableRow key='##table-empty##'>
           <td data-toggle='collapse'
-              colSpan={ this.props.columns.length + (isSelectRowDefined ? 1 : 0) }
+              colSpan={ colSpan }
               className='react-bs-table-no-data'>
               { this.props.noDataText || Const.NO_DATA_TEXT }
           </td>
@@ -204,7 +206,7 @@ class TableBody extends Component {
       <div ref='container'
         className={ classSet('react-bs-container-body', this.props.bodyContainerClass) }
         style={ this.props.style }>
-        <table id='remote-resizable' className={ tableClasses }>
+        <table className={ tableClasses }>
           { React.cloneElement(tableHeader, { ref: 'header' }) }
           <tbody ref='tbody'>
             { tableRows }
