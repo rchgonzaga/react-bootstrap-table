@@ -23,7 +23,7 @@ class BootstrapTable extends Component {
       this.isIE = document.documentMode;
     }
     this.store = new TableDataStore(this.props.data ? this.props.data.slice() : []);
-
+    this.isVerticalScroll = false;
     this.initTable(this.props);
 
     if (this.props.selectRow && this.props.selectRow.selected) {
@@ -1154,7 +1154,7 @@ class BootstrapTable extends Component {
 
     const scrollBarWidth = isScroll ? Util.getScrollBarWidth() : 0;
     if (firstRow && this.store.getDataNum()) {
-      if (isScroll) {
+      if (isScroll || this.isVerticalScroll !== isScroll) {
         const cells = firstRow.childNodes;
         for (let i = 0; i < cells.length; i++) {
           const cell = cells[i];
@@ -1192,6 +1192,7 @@ class BootstrapTable extends Component {
         }
       });
     }
+    this.isVerticalScroll = isScroll;
   }
 
   _adjustHeight() {
@@ -1272,7 +1273,7 @@ BootstrapTable.propTypes = {
       Const.ROW_SELECT_MULTI
     ]),
     customComponent: PropTypes.func,
-    bgColor: PropTypes.string,
+    bgColor: PropTypes.oneOfType([ PropTypes.string, PropTypes.func ]),
     selected: PropTypes.array,
     onSelect: PropTypes.func,
     onSelectAll: PropTypes.func,

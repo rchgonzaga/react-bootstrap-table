@@ -1,3 +1,45 @@
+<a name="v3.1.6"></a>
+# [v3.1.6](https://github.com/AllenFang/react-bootstrap-table/compare/v3.1.5...v3.1.6) (2017-04-03)
+## Bug fixes
+* Fixed wrong `z-index` for insert modal and mask([91b4dca](https://github.com/AllenFang/react-bootstrap-table/commit/91b4dca1e884d8295c2acdf53814bfa221014ccf))
+* Fixed keyboard navigation does not work if `selectRow.hideSelectColumn` is true([e8c25fd](https://github.com/AllenFang/react-bootstrap-table/commit/e8c25fd48de8f9e9081a790042995c1ebe17197e))
+
+## Enhancement
+* Support `editable.readOnly` for `TableHeaderColumn`, which is helpful if you want this field can be edited on insert but not on cell editing([8729faf](https://github.com/AllenFang/react-bootstrap-table/commit/8729faf4c976dbd91338910b6f3104afed05b063))
+
+<a name="v3.1.5"></a>
+# [v3.1.5](https://github.com/AllenFang/react-bootstrap-table/compare/v3.1.4...v3.1.5) (2017-04-01)
+## Bug fixes
+* Fix tab broke if encounter non editable or hidden cell([ca7a9dd](htthttps://github.com/AllenFang/react-bootstrap-table/commit/ca7a9dd7f7a0df2f85554aa927b43d4eecbe854a))
+* Avoid the horizontal scrollbar appear when resize the window
+
+<a name="v3.1.4"></a>
+# [v3.1.4](https://github.com/AllenFang/react-bootstrap-table/compare/v3.1.3...v3.1.4) (2017-04-01)
+## Bug fixes
+* Fix tab broke if encounter non editable or hidden cell([2f9ed93](https://github.com/AllenFang/react-bootstrap-table/commit/2f9ed933a3b7a37278817f1f2932fbed89c0ad0b))
+* Fix unalign issue if table become scrollable then non scrollable([af8b3c3](https://github.com/AllenFang/react-bootstrap-table/commit/af8b3c3aaa594dd1ed7639556106629bfd36106f))
+
+## Enhancement
+* `selectRow.bgColor` now support a callback function for more flexible bgColor setting([136dec9](https://github.com/AllenFang/react-bootstrap-table/commit/136dec9313d92658748e38fd141ecd618da5d333))
+	```js
+	bgColor: function(row, isSelect) {
+     if (isSelect) {
+       const { id } = row;
+       if (id < 2) return 'blue';
+       else if (id < 4) return 'red';
+       else return 'yellow';
+     }
+     return null;
+  }
+	```
+
+<a name="v3.1.3"></a>
+# [v3.1.3](https://github.com/AllenFang/react-bootstrap-table/compare/v3.1.2...v3.1.3) (2017-03-30)
+## Bug fixes
+* Fix bug about != and = are not work well for date filter([14bcfba](https://github.com/AllenFang/react-bootstrap-table/commit/14bcfba28df01d9591cc189f3a5c1f87c94fade5))
+* Fix an error happen if change sizePerPage then fill date([28561d5](https://github.com/AllenFang/react-bootstrap-table/commit/28561d5752788d7bcb0ad0d9d10a7f6fa63fc5bd))
+* Fix FileSaver.js causes requireJS errors in console([850cdea](https://github.com/AllenFang/react-bootstrap-table/commit/850cdeaddc75315f9a2b1e3cbc72e94e5add706c))
+
 <a name="v3.1.2"></a>
 # [v3.1.2](https://github.com/AllenFang/react-bootstrap-table/compare/v3.1.1...v3.1.2) (2017-03-28)
 ## Bug fixes
