@@ -400,6 +400,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        keyField: keyField,
 	        colInfos: this.colInfos,
 	        multiColumnSearch: props.multiColumnSearch,
+	        strictSearch: props.strictSearch,
 	        multiColumnSort: props.multiColumnSort,
 	        remote: this.props.remote
 	      });
@@ -488,10 +489,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'reset',
 	    value: function reset() {
+	      var pageStartIndex = this.props.options.pageStartIndex;
+
 	      this.store.clean();
 	      this.setState({
 	        data: this.getTableData(),
-	        currPage: 1,
+	        currPage: _util2.default.getFirstPage(pageStartIndex),
 	        expanding: [],
 	        sizePerPage: _Const2.default.SIZE_PER_PAGE_LIST[0],
 	        selectedRowKeys: this.store.getSelectedRowKeys(),
@@ -551,6 +554,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	          currPage: page,
 	          sizePerPage: sizePerPage,
 	          reset: false
+	        });
+	      }
+
+	      // If setting the expanded rows is being handled externally
+	      // then overwrite the current expanded rows.
+	      if (this.props.options.expanding !== options.expanding) {
+	        this.setState({
+	          expanding: options.expanding || []
 	        });
 	      }
 
@@ -738,6 +749,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            withoutNoDataText: this.props.options.withoutNoDataText,
 	            expanding: this.state.expanding,
 	            onExpand: this.handleExpandRow,
+	            onlyOneExpanding: this.props.options.onlyOneExpanding,
 	            beforeShowError: this.props.options.beforeShowError,
 	            keyBoardNav: this.props.keyBoardNav,
 	            onNavigateCell: this.handleNavigateCell,
@@ -829,18 +841,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return;
 	      }
 
-	      // We calculate an offset here in order to properly fetch the indexed data,
-	      // despite the page start index not always being 1
-	      var normalizedPage = void 0;
-	      if (pageStartIndex !== undefined) {
-	        var offset = Math.abs(_Const2.default.PAGE_START_INDEX - pageStartIndex);
-	        normalizedPage = page + offset;
-	      } else {
-	        normalizedPage = page;
-	      }
-
-	      var result = this.store.page(normalizedPage, sizePerPage).get();
-
+	      var result = this.store.page(_util2.default.getNormalizedPage(pageStartIndex, page), sizePerPage).get();
 	      this.setState({ data: result, reset: false });
 	    }
 	  }, {
@@ -885,8 +886,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      x += offSetX;
 	      y += offSetY;
-	      // currPage += 1;
-	      // console.log(currPage);
 
 	      var columns = this.store.getColInfos();
 	      var visibleRowSize = this.state.data.length;
@@ -1025,16 +1024,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	    key: '__handleShowOnlySelected__REACT_HOT_LOADER__',
 	    value: function __handleShowOnlySelected__REACT_HOT_LOADER__() {
 	      this.store.ignoreNonSelected();
+	      var pageStartIndex = this.props.options.pageStartIndex;
+
 	      var result = void 0;
 	      if (this.props.pagination) {
-	        result = this.store.page(1, this.state.sizePerPage).get();
+	        result = this.store.page(_util2.default.getNormalizedPage(pageStartIndex), this.state.sizePerPage).get();
 	      } else {
 	        result = this.store.get();
 	      }
 	      this.setState({
 	        data: result,
 	        reset: false,
-	        currPage: this.props.options.pageStartIndex || _Const2.default.PAGE_START_INDEX
+	        currPage: _util2.default.getFirstPage(pageStartIndex)
 	      });
 	    }
 	  }, {
@@ -1243,7 +1244,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: '__handleFilterData__REACT_HOT_LOADER__',
 	    value: function __handleFilterData__REACT_HOT_LOADER__(filterObj) {
-	      var onFilterChange = this.props.options.onFilterChange;
+	      var _props$options2 = this.props.options,
+	          onFilterChange = _props$options2.onFilterChange,
+	          pageStartIndex = _props$options2.pageStartIndex;
 
 	      if (onFilterChange) {
 	        var colInfos = this.store.getColInfos();
@@ -1251,7 +1254,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 
 	      this.setState({
-	        currPage: this.props.options.pageStartIndex || _Const2.default.PAGE_START_INDEX,
+	        currPage: _util2.default.getFirstPage(pageStartIndex),
 	        reset: false
 	      });
 
@@ -1275,7 +1278,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (this.props.pagination) {
 	        var sizePerPage = this.state.sizePerPage;
 
-	        result = this.store.page(1, sizePerPage).get();
+	        result = this.store.page(_util2.default.getNormalizedPage(pageStartIndex), sizePerPage).get();
 	      } else {
 	        result = this.store.get();
 	      }
@@ -1330,7 +1333,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (this.refs.toolbar) {
 	        this.refs.toolbar.setSearchInput(searchText);
 	      }
-	      var onSearchChange = this.props.options.onSearchChange;
+	      var _props$options3 = this.props.options,
+	          onSearchChange = _props$options3.onSearchChange,
+	          pageStartIndex = _props$options3.pageStartIndex;
 
 	      if (onSearchChange) {
 	        var colInfos = this.store.getColInfos();
@@ -1338,7 +1343,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 
 	      this.setState({
-	        currPage: this.props.options.pageStartIndex || _Const2.default.PAGE_START_INDEX,
+	        currPage: _util2.default.getFirstPage(pageStartIndex),
 	        reset: false
 	      });
 
@@ -1361,7 +1366,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (this.props.pagination) {
 	        var sizePerPage = this.state.sizePerPage;
 
-	        result = this.store.page(1, sizePerPage).get();
+	        result = this.store.page(_util2.default.getNormalizedPage(pageStartIndex), sizePerPage).get();
 	      } else {
 	        result = this.store.get();
 	      }
@@ -1429,7 +1434,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	          insertRow = _props3.insertRow,
 	          deleteRow = _props3.deleteRow,
 	          search = _props3.search,
-	          children = _props3.children;
+	          children = _props3.children,
+	          keyField = _props3.keyField;
 
 	      var enableShowOnlySelected = selectRow && selectRow.showOnlySelected;
 	      var print = typeof this.props.options.printToolBar === 'undefined' ? true : this.props.options.printToolBar;
@@ -1439,10 +1445,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	          columns = children.map(function (column, r) {
 	            var props = column.props;
 
+	            var isKey = props.isKey || keyField === props.dataField;
 	            return {
+	              isKey: isKey,
 	              name: props.headerText || props.children,
 	              field: props.dataField,
 	              hiddenOnInsert: props.hiddenOnInsert,
+	              keyValidator: props.keyValidator,
+	              customInsertEditor: props.customInsertEditor,
 	              // when you want same auto generate value and not allow edit, example ID field
 	              autoValue: props.autoValue || false,
 	              // for create editor, no params for column.editable() indicate that editor for new row
@@ -1457,7 +1467,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	            name: children.props.headerText || children.props.children,
 	            field: children.props.dataField,
 	            editable: children.props.editable,
-	            hiddenOnInsert: children.props.hiddenOnInsert
+	            customInsertEditor: children.props.customInsertEditor,
+	            hiddenOnInsert: children.props.hiddenOnInsert,
+	            keyValidator: children.props.keyValidator
 	          }];
 	        }
 	        return _react2.default.createElement(
@@ -1500,7 +1512,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            searchPanel: this.props.options.searchPanel,
 	            btnGroup: this.props.options.btnGroup,
 	            toolBar: this.props.options.toolBar,
-	            reset: this.state.reset })
+	            reset: this.state.reset,
+	            isValidKey: this.store.isValidKey })
 	        );
 	      } else {
 	        return null;
@@ -1621,11 +1634,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	        if (atTheBeginning) {
-	          var firstPage = this.props.options.pageStartIndex || _Const2.default.PAGE_START_INDEX;
-	          result = this.store.page(firstPage, sizePerPage).get();
+	          var pageStartIndex = this.props.options.pageStartIndex;
+
+	          result = this.store.page(_util2.default.getNormalizedPage(pageStartIndex), sizePerPage).get();
 	          this.setState({
 	            data: result,
-	            currPage: firstPage,
+	            currPage: _util2.default.getFirstPage(pageStartIndex),
 	            reset: false
 	          });
 	        } else {
@@ -1694,6 +1708,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  insertRow: _react.PropTypes.bool,
 	  deleteRow: _react.PropTypes.bool,
 	  search: _react.PropTypes.bool,
+	  multiColumnSearch: _react.PropTypes.bool,
+	  strictSearch: _react.PropTypes.bool,
 	  columnFilter: _react.PropTypes.bool,
 	  trClassName: _react.PropTypes.any,
 	  tableStyle: _react.PropTypes.object,
@@ -1777,6 +1793,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    expandRowBgColor: _react.PropTypes.string,
 	    expandBy: _react.PropTypes.string,
 	    expanding: _react.PropTypes.array,
+	    onlyOneExpanding: _react.PropTypes.bool,
 	    beforeShowError: _react.PropTypes.func,
 	    printToolBar: _react.PropTypes.bool
 	  }),
@@ -1839,6 +1856,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  deleteRow: false,
 	  search: false,
 	  multiColumnSearch: false,
+	  strictSearch: undefined,
 	  multiColumnSort: 1,
 	  columnFilter: false,
 	  trClassName: '',
@@ -1920,6 +1938,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    expandRowBgColor: undefined,
 	    expandBy: _Const2.default.EXPAND_BY_ROW,
 	    expanding: [],
+	    onlyOneExpanding: false,
 	    beforeShowError: undefined,
 	    printToolBar: true
 	  },
@@ -2855,7 +2874,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	          keyField = _props4.keyField,
 	          expandBy = _props4.expandBy,
 	          expandableRow = _props4.expandableRow,
-	          clickToExpand = _props4.selectRow.clickToExpand;
+	          clickToExpand = _props4.selectRow.clickToExpand,
+	          onlyOneExpanding = _props4.onlyOneExpanding;
 
 	      var selectRowAndExpand = this._isSelectRowDefined() && !clickToExpand ? false : true;
 	      columnIndex = this._isSelectRowDefined() ? columnIndex - 1 : columnIndex;
@@ -2872,7 +2892,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	              return k !== rowKey;
 	            });
 	          } else {
-	            expanding.push(rowKey);
+	            if (onlyOneExpanding) expanding = [rowKey];else expanding.push(rowKey);
 	          }
 	          _this2.props.onExpand(expanding);
 	        })();
@@ -3068,6 +3088,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  expandBy: _react.PropTypes.string,
 	  expanding: _react.PropTypes.array,
 	  onExpand: _react.PropTypes.func,
+	  onlyOneExpanding: _react.PropTypes.bool,
 	  beforeShowError: _react.PropTypes.func,
 	  keyBoardNav: _react.PropTypes.oneOfType([_react.PropTypes.bool, _react.PropTypes.object]),
 	  x: _react.PropTypes.number,
@@ -3155,6 +3176,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  canUseDOM: function canUseDOM() {
 	    return typeof window !== 'undefined' && typeof window.document !== 'undefined';
+	  },
+
+
+	  // We calculate an offset here in order to properly fetch the indexed data,
+	  // despite the page start index not always being 1
+	  getNormalizedPage: function getNormalizedPage(pageStartIndex, page) {
+	    if (page === undefined) page = pageStartIndex;
+	    var normalizedPage = void 0;
+	    if (pageStartIndex !== undefined) {
+	      var offset = Math.abs(_Const2.default.PAGE_START_INDEX - pageStartIndex);
+	      normalizedPage = page + offset;
+	    } else {
+	      normalizedPage = page;
+	    }
+	    return normalizedPage;
+	  },
+	  getFirstPage: function getFirstPage(pageStartIndex) {
+	    return pageStartIndex !== undefined ? pageStartIndex : _Const2.default.PAGE_START_INDEX;
 	  },
 	  renderColGroup: function renderColGroup(columns, selectRow) {
 	    var expandColumnOptions = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -10750,10 +10789,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (i >= this.props.pageStartIndex) pages.push(i);
 	      }
 
-	      if (endPage <= this.lastPage) {
+	      if (endPage <= this.lastPage && pages.length > 1) {
 	        pages.push(this.props.nextPage);
 	      }
-	      if (endPage !== this.totalPages && this.props.withFirstAndLast) {
+	      if (endPage !== this.lastPage && this.props.withFirstAndLast) {
 	        pages.push(this.props.lastPage);
 	      }
 
@@ -10930,6 +10969,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+	var sizePerPageDefaultClass = 'react-bs-table-sizePerPage-dropdown';
+
 	var SizePerPageDropDown = function (_Component) {
 	  _inherits(SizePerPageDropDown, _Component);
 
@@ -10958,7 +10999,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      return _react2.default.createElement(
 	        'span',
-	        { className: variation + ' ' + openClass + ' ' + className, style: dropDownStyle },
+	        { style: dropDownStyle,
+	          className: variation + ' ' + openClass + ' ' + className + ' ' + sizePerPageDefaultClass },
 	        _react2.default.createElement(
 	          'button',
 	          { className: 'btn ' + btnContextual + ' dropdown-toggle',
@@ -11011,6 +11053,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if (typeof __REACT_HOT_LOADER__ === 'undefined') {
 	    return;
 	  }
+
+	  __REACT_HOT_LOADER__.register(sizePerPageDefaultClass, 'sizePerPageDefaultClass', '/Users/allen/Node/react-bootstrap-table-new/react-bootstrap-table/src/pagination/SizePerPageDropDown.js');
 
 	  __REACT_HOT_LOADER__.register(SizePerPageDropDown, 'SizePerPageDropDown', '/Users/allen/Node/react-bootstrap-table-new/react-bootstrap-table/src/pagination/SizePerPageDropDown.js');
 
@@ -11101,6 +11145,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    _classCallCheck(this, ToolBar);
 
 	    var _this = _possibleConstructorReturn(this, (ToolBar.__proto__ || Object.getPrototypeOf(ToolBar)).call(this, props));
+
+	    _this.displayCommonMessage = function () {
+	      return _this.__displayCommonMessage__REACT_HOT_LOADER__.apply(_this, arguments);
+	    };
 
 	    _this.handleSaveBtnClick = function () {
 	      return _this.__handleSaveBtnClick__REACT_HOT_LOADER__.apply(_this, arguments);
@@ -11221,6 +11269,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    })
 	  }, {
+	    key: '__displayCommonMessage__REACT_HOT_LOADER__',
+	    value: function __displayCommonMessage__REACT_HOT_LOADER__() {
+	      this.refs.notifier.notice('error', 'Form validate errors, please checking!', 'Pressed ESC can cancel');
+	    }
+	  }, {
 	    key: 'validateNewRow',
 	    value: function validateNewRow(newRow) {
 	      var _this3 = this;
@@ -11231,12 +11284,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var responseType = void 0;
 
 	      this.props.columns.forEach(function (column) {
-	        if (column.editable && column.editable.validator) {
+	        if (column.isKey && column.keyValidator) {
+	          // key validator for checking exist key
+	          tempMsg = _this3.props.isValidKey(newRow[column.field]);
+	          if (tempMsg) {
+	            _this3.displayCommonMessage();
+	            isValid = false;
+	            validateState[column.field] = tempMsg;
+	          }
+	        } else if (column.editable && column.editable.validator) {
 	          // process validate
 	          tempMsg = column.editable.validator(newRow[column.field]);
 	          responseType = typeof tempMsg === 'undefined' ? 'undefined' : _typeof(tempMsg);
 	          if (responseType !== 'object' && tempMsg !== true) {
-	            _this3.refs.notifier.notice('error', 'Form validate errors, please checking!', 'Pressed ESC can cancel');
+	            _this3.displayCommonMessage();
 	            isValid = false;
 	            validateState[column.field] = tempMsg;
 	          } else if (responseType === 'object' && tempMsg.isValid !== true) {
@@ -11608,7 +11669,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  btnGroup: _react.PropTypes.func,
 	  toolBar: _react.PropTypes.func,
 	  searchPosition: _react.PropTypes.string,
-	  reset: _react.PropTypes.bool
+	  reset: _react.PropTypes.bool,
+	  isValidKey: _react.PropTypes.func
 	};
 
 	ToolBar.defaultProps = {
@@ -13504,6 +13566,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	          if (column.editable && column.editable.type === 'checkbox') {
 	            var values = inputVal.split(':');
 	            inputVal = dom.checked ? values[0] : values[1];
+	          } else if (column.customInsertEditor) {
+	            inputVal = inputVal || dom.getFieldValue();
 	          }
 	        }
 	        newRow[column.field] = inputVal;
@@ -13527,12 +13591,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	              field = column.field,
 	              name = column.name,
 	              autoValue = column.autoValue,
-	              hiddenOnInsert = column.hiddenOnInsert;
+	              hiddenOnInsert = column.hiddenOnInsert,
+	              customInsertEditor = column.customInsertEditor;
 
 	          var attr = {
 	            ref: field + i,
 	            placeholder: editable.placeholder ? editable.placeholder : name
 	          };
+	          var fieldElement = void 0;
+
+	          if (customInsertEditor) {
+	            var getElement = customInsertEditor.getElement;
+
+	            fieldElement = getElement(column, attr, 'form-control', ignoreEditable);
+	          } else {
+	            fieldElement = (0, _Editor2.default)(editable, attr, format, '', undefined, ignoreEditable);
+	          }
 
 	          if (autoValue || hiddenOnInsert || !column.field) {
 	            // when you want same auto generate value
@@ -13552,7 +13626,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	              null,
 	              name
 	            ),
-	            (0, _Editor2.default)(editable, attr, format, '', undefined, ignoreEditable),
+	            fieldElement,
 	            error
 	          );
 	        })
@@ -14415,10 +14489,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var TableDataStore = function () {
 	  function TableDataStore(data) {
+	    var _this = this;
+
 	    _classCallCheck(this, TableDataStore);
 
+	    this.isValidKey = function () {
+	      return _this.__isValidKey__REACT_HOT_LOADER__.apply(_this, arguments);
+	    };
+
 	    this.data = data;
-	    this.colInfos = null;
 	    this.filteredData = null;
 	    this.isOnFilter = false;
 	    this.filterObj = null;
@@ -14426,10 +14505,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.sortList = [];
 	    this.pageObj = {};
 	    this.selected = [];
-	    this.multiColumnSearch = false;
-	    this.multiColumnSort = 1;
 	    this.showOnlySelected = false;
-	    this.remote = false; // remote data
 	  }
 
 	  _createClass(TableDataStore, [{
@@ -14440,6 +14516,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.colInfos = props.colInfos;
 	      this.remote = props.remote;
 	      this.multiColumnSearch = props.multiColumnSearch;
+	      // default behaviour if strictSearch prop is not provided: !multiColumnSearch
+	      this.strictSearch = typeof props.strictSearch === 'undefined' ? !props.multiColumnSearch : props.strictSearch;
 	      this.multiColumnSort = props.multiColumnSort;
 	    }
 	  }, {
@@ -14531,14 +14609,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'getRowByKey',
 	    value: function getRowByKey(keys) {
-	      var _this = this;
+	      var _this2 = this;
 
-	      return keys.map(function (key) {
-	        var result = _this.data.filter(function (d) {
-	          return d[_this.keyField] === key;
-	        });
-	        if (result.length !== 0) return result[0];
-	      });
+	      // Bad Performance #1164
+	      // return keys.map(key => {
+	      //   const result = this.data.filter(d => d[this.keyField] === key);
+	      //   if (result.length !== 0) return result[0];
+	      // });
+	      var result = [];
+
+	      var _loop = function _loop(i) {
+	        var d = _this2.data[i];
+	        if (!keys || keys.length === 0) return 'break';
+	        if (keys.indexOf(d[_this2.keyField]) > -1) {
+	          keys = keys.filter(function (k) {
+	            return k !== d[_this2.keyField];
+	          });
+	          result.push(d);
+	        }
+	      };
+
+	      for (var i = 0; i < this.data.length; i++) {
+	        var _ret = _loop(i);
+
+	        if (_ret === 'break') break;
+	      }
+	      return result;
 	    }
 	  }, {
 	    key: 'getSelectedRowKeys',
@@ -14564,14 +14660,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'ignoreNonSelected',
 	    value: function ignoreNonSelected() {
-	      var _this2 = this;
+	      var _this3 = this;
 
 	      this.showOnlySelected = !this.showOnlySelected;
 	      if (this.showOnlySelected) {
 	        this.isOnFilter = true;
 	        this.filteredData = this.data.filter(function (row) {
-	          var result = _this2.selected.find(function (x) {
-	            return row[_this2.keyField] === x;
+	          var result = _this3.selected.find(function (x) {
+	            return row[_this3.keyField] === x;
 	          });
 	          return typeof result !== 'undefined' ? true : false;
 	        });
@@ -14639,16 +14735,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'add',
 	    value: function add(newObj) {
-	      if (!newObj[this.keyField] || newObj[this.keyField].toString() === '') {
-	        throw new Error(this.keyField + ' can\'t be empty value.');
-	      }
-	      var currentDisplayData = this.getCurrentDisplayData();
-	      currentDisplayData.forEach(function (row) {
-	        if (row[this.keyField].toString() === newObj[this.keyField].toString()) {
-	          throw new Error(this.keyField + ' ' + newObj[this.keyField] + ' already exists');
-	        }
-	      }, this);
+	      var e = this.isValidKey(newObj[this.keyField]);
+	      if (e) throw new Error(e);
 
+	      var currentDisplayData = this.getCurrentDisplayData();
 	      currentDisplayData.push(newObj);
 	      if (this.isOnFilter) {
 	        this.data.push(newObj);
@@ -14656,18 +14746,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this._refresh(false);
 	    }
 	  }, {
+	    key: '__isValidKey__REACT_HOT_LOADER__',
+	    value: function __isValidKey__REACT_HOT_LOADER__(key) {
+	      var _this4 = this;
+
+	      if (!key || key.toString() === '') {
+	        return this.keyField + ' can\'t be empty value.';
+	      }
+	      var currentDisplayData = this.getCurrentDisplayData();
+	      var exist = currentDisplayData.find(function (row) {
+	        return row[_this4.keyField].toString() === key.toString();
+	      });
+	      if (exist) return this.keyField + ' ' + key + ' already exists';
+	    }
+	  }, {
 	    key: 'remove',
 	    value: function remove(rowKey) {
-	      var _this3 = this;
+	      var _this5 = this;
 
 	      var currentDisplayData = this.getCurrentDisplayData();
 	      var result = currentDisplayData.filter(function (row) {
-	        return rowKey.indexOf(row[_this3.keyField]) === -1;
+	        return rowKey.indexOf(row[_this5.keyField]) === -1;
 	      });
 
 	      if (this.isOnFilter) {
 	        this.data = this.data.filter(function (row) {
-	          return rowKey.indexOf(row[_this3.keyField]) === -1;
+	          return rowKey.indexOf(row[_this5.keyField]) === -1;
 	        });
 	        this.filteredData = result;
 	      } else {
@@ -14868,7 +14972,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: '_filter',
 	    value: function _filter(source) {
-	      var _this4 = this;
+	      var _this6 = this;
 
 	      var filterObj = this.filterObj;
 	      this.filteredData = source.filter(function (row, r) {
@@ -14915,11 +15019,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	              filterFormatted = void 0,
 	              formatExtraData = void 0,
 	              filterValue = void 0;
-	          if (_this4.colInfos[key]) {
-	            format = _this4.colInfos[key].format;
-	            filterFormatted = _this4.colInfos[key].filterFormatted;
-	            formatExtraData = _this4.colInfos[key].formatExtraData;
-	            filterValue = _this4.colInfos[key].filterValue;
+	          if (_this6.colInfos[key]) {
+	            format = _this6.colInfos[key].format;
+	            filterFormatted = _this6.colInfos[key].filterFormatted;
+	            formatExtraData = _this6.colInfos[key].formatExtraData;
+	            filterValue = _this6.colInfos[key].filterValue;
 	            if (filterFormatted && format) {
 	              targetVal = format(row[key], row, formatExtraData, r);
 	            } else if (filterValue) {
@@ -14930,23 +15034,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	          switch (filterObj[key].type) {
 	            case _Const2.default.FILTER_TYPE.NUMBER:
 	              {
-	                valid = _this4.filterNumber(targetVal, filterVal, filterObj[key].value.comparator);
+	                valid = _this6.filterNumber(targetVal, filterVal, filterObj[key].value.comparator);
 	                break;
 	              }
 	            case _Const2.default.FILTER_TYPE.DATE:
 	              {
-	                valid = _this4.filterDate(targetVal, filterVal, filterObj[key].value.comparator);
+	                valid = _this6.filterDate(targetVal, filterVal, filterObj[key].value.comparator);
 	                break;
 	              }
 	            case _Const2.default.FILTER_TYPE.REGEX:
 	              {
-	                valid = _this4.filterRegex(targetVal, filterVal);
+	                valid = _this6.filterRegex(targetVal, filterVal);
 	                break;
 	              }
 	            case _Const2.default.FILTER_TYPE.CUSTOM:
 	              {
 	                var cond = filterObj[key].props ? filterObj[key].props.cond : _Const2.default.FILTER_COND_LIKE;
-	                valid = _this4.filterCustom(targetVal, filterVal, filterObj[key].value, cond);
+	                valid = _this6.filterCustom(targetVal, filterVal, filterObj[key].value, cond);
 	                break;
 	              }
 	            default:
@@ -14955,7 +15059,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                  filterVal = format(filterVal, row, formatExtraData, r);
 	                }
 	                var _cond = filterObj[key].props ? filterObj[key].props.cond : _Const2.default.FILTER_COND_LIKE;
-	                valid = _this4.filterText(targetVal, filterVal, _cond);
+	                valid = _this6.filterText(targetVal, filterVal, _cond);
 	                break;
 	              }
 	          }
@@ -14967,64 +15071,89 @@ return /******/ (function(modules) { // webpackBootstrap
 	      });
 	      this.isOnFilter = true;
 	    }
+
+	    /*
+	     * Four different sort modes, all case insensitive:
+	     * (1) strictSearch && !multiColumnSearch
+	     *     search text must be contained as provided in a single column
+	     * (2) strictSearch && multiColumnSearch
+	     *     conjunction (AND combination) of whitespace separated terms over multiple columns
+	     * (3) !strictSearch && !multiColumnSearch
+	     *     conjunction (AND combination) of whitespace separated terms in a single column
+	     * (4) !strictSearch && multiColumnSearch
+	     *     any of the whitespace separated terms must be contained in any column
+	     */
+
 	  }, {
 	    key: '_search',
 	    value: function _search(source) {
-	      var _this5 = this;
+	      var _this7 = this;
 
-	      var searchTextArray = [];
-
-	      if (this.multiColumnSearch) {
-	        searchTextArray = this.searchText.split(' ');
+	      var searchTextArray = void 0;
+	      if (this.multiColumnSearch || !this.strictSearch) {
+	        // ignore leading and trailing whitespaces
+	        searchTextArray = this.searchText.trim().toLowerCase().split(/\s+/);
 	      } else {
-	        searchTextArray.push(this.searchText);
+	        searchTextArray = [this.searchText.toLowerCase()];
 	      }
+	      var searchTermCount = searchTextArray.length;
+	      var multipleTerms = searchTermCount > 1;
+	      var nonStrictMultiCol = multipleTerms && !this.strictSearch && this.multiColumnSearch;
+	      var nonStrictSingleCol = multipleTerms && !this.strictSearch && !this.multiColumnSearch;
 	      this.filteredData = source.filter(function (row, r) {
 	        var keys = Object.keys(row);
-	        var valid = false;
+	        // only clone array if necessary
+	        var searchTerms = multipleTerms ? searchTextArray.slice() : searchTextArray;
 	        // for loops are ugly, but performance matters here.
 	        // And you cant break from a forEach.
 	        // http://jsperf.com/for-vs-foreach/66
 	        for (var i = 0, keysLength = keys.length; i < keysLength; i++) {
 	          var key = keys[i];
-	          // fixed data filter when misunderstand 0 is false
-	          var filterSpecialNum = false;
-	          if (!isNaN(row[key]) && parseInt(row[key], 10) === 0) {
-	            filterSpecialNum = true;
-	          }
-	          if (_this5.colInfos[key] && (row[key] || filterSpecialNum)) {
-	            var _colInfos$key = _this5.colInfos[key],
-	                format = _colInfos$key.format,
-	                filterFormatted = _colInfos$key.filterFormatted,
-	                filterValue = _colInfos$key.filterValue,
-	                formatExtraData = _colInfos$key.formatExtraData,
-	                searchable = _colInfos$key.searchable;
+	          var colInfo = _this7.colInfos[key];
+	          if (colInfo && colInfo.searchable) {
+	            var format = colInfo.format,
+	                filterFormatted = colInfo.filterFormatted,
+	                filterValue = colInfo.filterValue,
+	                formatExtraData = colInfo.formatExtraData;
 
-	            var targetVal = row[key];
-	            if (searchable) {
-	              if (filterFormatted && format) {
-	                targetVal = format(targetVal, row, formatExtraData, r);
-	              } else if (filterValue) {
-	                targetVal = filterValue(targetVal, row);
+	            var targetVal = void 0;
+	            if (filterFormatted && format) {
+	              targetVal = format(row[key], row, formatExtraData, r);
+	            } else if (filterValue) {
+	              targetVal = filterValue(row[key], row);
+	            } else {
+	              targetVal = row[key];
+	            }
+	            if (targetVal !== null && typeof targetVal !== 'undefined') {
+	              targetVal = targetVal.toString().toLowerCase();
+	              if (nonStrictSingleCol && searchTermCount > searchTerms.length) {
+	                // reset search terms for single column search
+	                searchTerms = searchTextArray.slice();
 	              }
-	              for (var j = 0, textLength = searchTextArray.length; j < textLength; j++) {
-	                var filterVal = searchTextArray[j].toLowerCase();
-	                if (targetVal.toString().toLowerCase().indexOf(filterVal) !== -1) {
-	                  valid = true;
+	              for (var j = searchTerms.length - 1; j > -1; j--) {
+	                if (targetVal.indexOf(searchTerms[j]) !== -1) {
+	                  if (nonStrictMultiCol || searchTerms.length === 1) {
+	                    // match found: the last or only one
+	                    return true;
+	                  }
+	                  // match found: but there are more search terms to check for
+	                  searchTerms.splice(j, 1);
+	                } else if (!_this7.multiColumnSearch) {
+	                  // one of the search terms was not found in this column
 	                  break;
 	                }
 	              }
 	            }
 	          }
 	        }
-	        return valid;
+	        return false;
 	      });
 	      this.isOnFilter = true;
 	    }
 	  }, {
 	    key: '_sort',
 	    value: function _sort(arr) {
-	      var _this6 = this;
+	      var _this8 = this;
 
 	      if (this.sortList.length === 0 || typeof this.sortList[0] === 'undefined') {
 	        return arr;
@@ -15033,11 +15162,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      arr.sort(function (a, b) {
 	        var result = 0;
 
-	        for (var i = 0; i < _this6.sortList.length; i++) {
-	          var sortDetails = _this6.sortList[i];
+	        for (var i = 0; i < _this8.sortList.length; i++) {
+	          var sortDetails = _this8.sortList[i];
 	          var isDesc = sortDetails.order.toLowerCase() === _Const2.default.SORT_DESC;
 
-	          var _colInfos$sortDetails = _this6.colInfos[sortDetails.sortField],
+	          var _colInfos$sortDetails = _this8.colInfos[sortDetails.sortField],
 	              sortFunc = _colInfos$sortDetails.sortFunc,
 	              sortFuncExtraData = _colInfos$sortDetails.sortFuncExtraData;
 
@@ -15120,10 +15249,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'getAllRowkey',
 	    value: function getAllRowkey() {
-	      var _this7 = this;
+	      var _this9 = this;
 
 	      return this.data.map(function (row) {
-	        return row[_this7.keyField];
+	        return row[_this9.keyField];
 	      });
 	    }
 	  }]);
@@ -16136,9 +16265,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      var classes = (0, _classnames2.default)(typeof className === 'function' ? className() : className, !isOnlyHead && dataSort ? 'sort-column' : '');
 
-	      var title = {
-	        title: headerTitle && typeof children === 'string' ? children : headerText
-	      };
+	      var attr = {};
+	      if (headerTitle) {
+	        if (typeof children === 'string' && !headerText) {
+	          attr.title = children;
+	        } else {
+	          attr.title = headerText;
+	        }
+	      }
 	      return _react2.default.createElement(
 	        'th',
 	        _extends({ ref: 'header-col',
@@ -16148,7 +16282,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          rowSpan: this.props.rowSpan,
 	          colSpan: this.props.colSpan,
 	          'data-is-only-head': this.props.isOnlyHead
-	        }, title),
+	        }, attr),
 	        children,
 	        sortCaret,
 	        _react2.default.createElement(
@@ -16290,7 +16424,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  expandable: _react.PropTypes.bool,
 	  tdAttr: _react.PropTypes.object,
 	  tdStyle: _react.PropTypes.object,
-	  thStyle: _react.PropTypes.object
+	  thStyle: _react.PropTypes.object,
+	  keyValidator: _react.PropTypes.bool
 	};
 
 	TableHeaderColumn.defaultProps = {
@@ -16324,7 +16459,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  expandable: true,
 	  tdAttr: undefined,
 	  tdStyle: undefined,
-	  thStyle: undefined
+	  thStyle: undefined,
+	  keyValidator: false
 	};
 
 	var _default = TableHeaderColumn;

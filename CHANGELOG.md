@@ -1,3 +1,35 @@
+<a name="v3.2.0"></a>
+# [v3.2.0](https://github.com/AllenFang/react-bootstrap-table/compare/v3.1.8...v3.2.0) (2017-04-16)
+## Enhancement
+* Now, we are able to custom the field in insert modal([8b66a74](https://github.com/AllenFang/react-bootstrap-table/commit/8b66a74178ebffdb8bad43bcbbf1381887ac7835))
+	* Check [example](https://github.com/AllenFang/react-bootstrap-table/blob/master/examples/js/custom/insert-modal/custom-insert-modal-field.js)
+
+## Features
+* Support conjunction search([246a7fa](https://github.com/AllenFang/react-bootstrap-table/commit/246a7fa721e0dd3846d1c1dcb48db2c114d261cb))
+	* Please check [#1199](https://github.com/AllenFang/react-bootstrap-table/issues/1199)
+* Allow to expand only one row at a time([c4c1b7f](https://github.com/AllenFang/react-bootstrap-table/commit/c4c1b7f377bbe3956b867d0afadf98e0e8c46cb6))
+	* configure via `options.onlyOneExpanding` and assign `true`
+
+<a name="v3.1.8"></a>
+# [v3.1.8](https://github.com/AllenFang/react-bootstrap-table/compare/v3.1.7...v3.1.8) (2017-04-13)
+## Bug fixes
+* Fix wrong page jumping after search, filter etc.([b686d1a](https://github.com/AllenFang/react-bootstrap-table/commit/b686d1a44b95878cbd0bdc91a7a8b20ce7fb8671))
+
+## Enhancement
+* Add class name `react-bs-table-sizePerPage-dropdown` for sizePerPage dropdown([da82469](https://github.com/AllenFang/react-bootstrap-table/commit/da82469431fdec4efb466b8d08a106b1448d7b44))
+
+<a name="v3.1.7"></a>
+# [v3.1.7](https://github.com/AllenFang/react-bootstrap-table/compare/v3.1.6...v3.1.7) (2017-04-07)
+## Bug fixes
+* Fixed `headerText` is not display well([14fc9b7](https://github.com/AllenFang/react-bootstrap-table/commit/14fc9b7773282f7533ffc0eed64f4e48d77e09a8))
+* Fixed bug if update `options.expanding` is not work([6f0b5fb](https://github.com/AllenFang/react-bootstrap-table/commit/6f0b5fbe81935b2f4dcf8c709f2f32730a934241))
+
+## Enhancement
+* Improve the performance of select all functionality([3b67e19](https://github.com/AllenFang/react-bootstrap-table/commit/3b67e1900d7cb8adab507b493c47356b0d972fc1))
+* Support `keyValidator` on `TableHeader` to tell `react-bootstrap-table` to push the error message in `validateState` if rowkey not valid([892c504](https://github.com/AllenFang/react-bootstrap-table/commit/892c50408739dff0fa1f4b8b25f2663b099f9c10))
+	* It's only work for rowKey column
+	* Default is false, `react-bootstrap-table` only show a toastr to nofity user that rowkey is not valid.
+
 <a name="v3.1.6"></a>
 # [v3.1.6](https://github.com/AllenFang/react-bootstrap-table/compare/v3.1.5...v3.1.6) (2017-04-03)
 ## Bug fixes
