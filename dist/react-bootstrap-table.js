@@ -982,12 +982,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	          onPageChange = _props$options.onPageChange,
 	          pageStartIndex = _props$options.pageStartIndex;
 
+	      var emptyTable = this.store.isEmpty();
 	      if (onPageChange) {
 	        onPageChange(page, sizePerPage);
 	      }
 
-	      this.setState({
-	        currPage: page,
+	      var state = {
 	        sizePerPage: sizePerPage,
 	        reset: false
 	      };
@@ -996,7 +996,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return state;
 	      });
 
-	      if (this.allowRemote(_Const2.default.REMOTE_PAGE)) {
+	      if (this.allowRemote(_Const2.default.REMOTE_PAGE) || emptyTable) {
 	        return;
 	      }
 
@@ -14905,6 +14905,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var saveAs = saveAs || function (view) {
 		"use strict";
 		// IE <10 is explicitly unsupported
+
 		if (typeof view === "undefined" || typeof navigator !== "undefined" && /MSIE [1-9]\./.test(navigator.userAgent)) {
 			return;
 		}
