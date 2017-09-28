@@ -1,6 +1,7 @@
+import Utils from './util';
 import React from 'react';
 
-const editor = function(editable, attr, format, editorClass, defaultValue, ignoreEditable) {
+const editor = function(editable, attr, format, editorClass, defaultValue, ignoreEditable, row) {
   if (editable === true ||
     (editable === false && ignoreEditable) ||
     typeof editable === 'string') { // simple declare
@@ -35,15 +36,27 @@ const editor = function(editable, attr, format, editorClass, defaultValue, ignor
 
     if (editable.type === 'select') {// process select input
       let options = [];
-      const values = editable.options.values;
+      let { values } = editable.options;
+      const { textKey, valueKey } = editable.options;
+      if (Utils.isFunction(values)) {
+        values = values(row);
+      }
       if (Array.isArray(values)) {// only can use arrray data for options
-        let rowValue;
-        options = values.map((d, i) => {
-          rowValue = format ? format(d) : d;
+        let text;
+        let value;
+        options = values.map((option, i) => {
+          if (typeof option === 'object') {
+            text = textKey ? option[textKey] : option.text;
+            value = valueKey ? option[valueKey] : option.value;
+          } else {
+            text = format ? format(option) : option;
+            value = option;
+          }
           return (
-            <option key={ 'option' + i } value={ d }>{ rowValue }</option>
+            <option key={ 'option' + i } value={ value }>{ text }</option>
           );
-        });
+        }
+        );
       }
       return (
         <select { ...attr } defaultValue={ defaultValue }>
@@ -98,7 +111,7 @@ const editor = function(editable, attr, format, editorClass, defaultValue, ignor
       );
     } else {// process other input type. as password,url,email...
       return (
-        <input { ...attr } type='text' defaultValue={ defaultValue }/>
+        <input { ...attr } type={ editable.type } defaultValue={ defaultValue }/>
       );
     }
   }

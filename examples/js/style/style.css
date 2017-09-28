@@ -1,4 +1,8 @@
-.tr-string-example{
+.react-bs-table-container {
+  margin: 5px 10px;
+}
+
+.tr-string-example, .th-string-example{
     font-style: oblique;
     color: red;
     background-color: aquamarine;

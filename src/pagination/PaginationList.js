@@ -1,8 +1,10 @@
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import classSet from 'classnames';
 import PageButton from './PageButton.js';
 import SizePerPageDropDown from './SizePerPageDropDown';
 import Const from '../Const';
+import Util from '../util';
 
 class PaginationList extends Component {
 
@@ -14,7 +16,10 @@ class PaginationList extends Component {
   }
 
   componentWillReceiveProps() {
-    this.setState({ open: false });
+    const { keepSizePerPageState } = this.props;
+    if (!keepSizePerPageState) {
+      this.setState(() => { return { open: false }; });
+    }
   }
 
   changePage = page => {
@@ -25,7 +30,8 @@ class PaginationList extends Component {
       nextPage,
       lastPage,
       firstPage,
-      sizePerPage
+      sizePerPage,
+      keepSizePerPageState
     } = this.props;
 
     if (page === prePage) {
@@ -39,6 +45,8 @@ class PaginationList extends Component {
     } else {
       page = parseInt(page, 10);
     }
+
+    if (keepSizePerPageState) { this.setState(() => { return { open: false }; }); }
 
     if (page !== currPage) {
       this.props.changePage(page, sizePerPage);
@@ -56,14 +64,16 @@ class PaginationList extends Component {
       if (this.props.onSizePerPageList) {
         this.props.onSizePerPageList(selectSize);
       }
-    } else {
-      this.setState({ open: false });
     }
+
+    this.setState(() => { return { open: false }; });
   }
 
   toggleDropDown = () => {
-    this.setState({
-      open: !this.state.open
+    this.setState(() => {
+      return {
+        open: !this.state.open
+      };
     });
   }
 
@@ -80,7 +90,7 @@ class PaginationList extends Component {
     } = this.props;
     this.totalPages = Math.ceil(dataSize / sizePerPage);
     this.lastPage = this.props.pageStartIndex + this.totalPages - 1;
-    const pageBtns = this.makePage(typeof paginationPanel === 'function');
+    const pageBtns = this.makePage(Util.isFunction(paginationPanel));
     const dropdown = this.makeDropDown();
 
     const offset = Math.abs(Const.PAGE_START_INDEX - pageStartIndex);
@@ -92,7 +102,7 @@ class PaginationList extends Component {
       Showing rows { start } to&nbsp;{ to + 1 } of&nbsp;{ dataSize }
     </span> : null;
 
-    if (typeof paginationShowsTotal === 'function') {
+    if (Util.isFunction(paginationShowsTotal)) {
       total = paginationShowsTotal(start, to + 1, dataSize);
     }
 
@@ -116,15 +126,16 @@ class PaginationList extends Component {
       <div className='row' style={ { marginTop: 15 } }>
         {
           content ||
-          <div>
-            <div className='col-md-6 col-xs-6 col-sm-6 col-lg-6'>
-              { total }{ sizePerPageList.length > 1 ? dropdown : null }
-            </div>
-            <div style={ { display: hidePageList } }
-              className='col-md-6 col-xs-6 col-sm-6 col-lg-6'>
-              { pageBtns }
-            </div>
-          </div>
+            [ (
+              <div key='paging-left' className='col-md-6 col-xs-6 col-sm-6 col-lg-6'>
+                { total }{ sizePerPageList.length > 1 ? dropdown : null }
+              </div>
+              ), (
+              <div key='paging-right' style={ { display: hidePageList } }
+                className='col-md-6 col-xs-6 col-sm-6 col-lg-6'>
+                { pageBtns }
+              </div>
+            ) ]
         }
       </div>
     );
@@ -144,7 +155,7 @@ class PaginationList extends Component {
       dropdown = sizePerPageDropDown({
         open: this.state.open,
         hideSizePerPage,
-        currSizePerPage: sizePerPage,
+        currSizePerPage: String(sizePerPage),
         sizePerPageList,
         toggleDropDown: this.toggleDropDown,
         changeSizePerPage: this.changeSizePerPage
@@ -162,7 +173,7 @@ class PaginationList extends Component {
         const pageNum = _sizePerPage.value || _sizePerPage;
         if (sizePerPage === pageNum) sizePerPageText = pageText;
         return (
-          <li key={ pageText } role='presentation'>
+          <li key={ pageText } role='presentation' className='dropdown-item'>
             <a role='menuitem'
               tabIndex='-1' href='#'
               data-page={ pageNum }
@@ -302,7 +313,8 @@ PaginationList.propTypes = {
   nextPageTitle: PropTypes.string,
   firstPageTitle: PropTypes.string,
   lastPageTitle: PropTypes.string,
-  hidePageListOnlyOnePage: PropTypes.bool
+  hidePageListOnlyOnePage: PropTypes.bool,
+  keepSizePerPageState: PropTypes.bool
 };
 
 PaginationList.defaultProps = {

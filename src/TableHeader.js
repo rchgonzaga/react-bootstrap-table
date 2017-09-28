@@ -1,8 +1,10 @@
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import ReactDOM from 'react-dom';
 import Const from './Const';
 import classSet from 'classnames';
 import SelectRowHeaderColumn from './SelectRowHeaderColumn';
+import ExpandRowHeaderColumn from './ExpandRowHeaderColumn';
 
 class Checkbox extends Component {
   componentDidMount() { this.update(this.props.checked); }
@@ -45,7 +47,7 @@ class TableHeader extends Component {
     }, this.props.tableHeaderClass);
 
     const rowCount = Math.max(...React.Children.map(this.props.children, elm =>
-      elm.props.row ? Number(elm.props.row) : 0
+      (elm && elm.props.row) ? Number(elm.props.row) : 0
     ));
 
     const rows = [];
@@ -54,18 +56,22 @@ class TableHeader extends Component {
     rows[0] = [];
     rows[0].push( [
       this.props.expandColumnVisible &&
-      this.props.expandColumnBeforeSelectColumn &&
-      <th className='react-bs-table-expand-cell'> </th>
+        this.props.expandColumnBeforeSelectColumn &&
+          <ExpandRowHeaderColumn rowCount={ rowCount + 1 }/>
     ], [
       this.renderSelectRowHeader(rowCount + 1, rowKey++)
     ], [
       this.props.expandColumnVisible &&
-      !this.props.expandColumnBeforeSelectColumn &&
-      <th className='react-bs-table-expand-cell'> </th>
+        !this.props.expandColumnBeforeSelectColumn &&
+          <ExpandRowHeaderColumn rowCount={ rowCount + 1 }/>
     ]);
-    const { sortIndicator, sortList, onSort, reset } = this.props;
+    const { sortIndicator, sortList, onSort, reset, version } = this.props;
 
     React.Children.forEach(this.props.children, (elm) => {
+      if (elm === null || elm === undefined) {
+        // Skip null or undefined elements.
+        return;
+      }
       const { dataField, dataSort } = elm.props;
       const sort = getSortOrder(sortList, dataField, dataSort);
       const rowIndex = elm.props.row ? Number(elm.props.row) : 0;
@@ -75,12 +81,12 @@ class TableHeader extends Component {
       }
       if ((rowSpan + rowIndex) === (rowCount + 1)) {
         rows[rowIndex].push(React.cloneElement(
-          elm, { reset, key: rowKey++, onSort, sort, sortIndicator, isOnlyHead: false }
-        ));
+          elm, { reset, key: rowKey++, onSort, sort, sortIndicator, isOnlyHead: false, version }
+          ));
       } else {
         rows[rowIndex].push(React.cloneElement(
-          elm, { key: rowKey++, isOnlyHead: true }
-        ));
+          elm, { key: rowKey++, isOnlyHead: true, version }
+          ));
       }
     });
 
@@ -154,7 +160,8 @@ TableHeader.propTypes = {
   reset: PropTypes.bool,
   expandColumnVisible: PropTypes.bool,
   expandColumnComponent: PropTypes.func,
-  expandColumnBeforeSelectColumn: PropTypes.bool
+  expandColumnBeforeSelectColumn: PropTypes.bool,
+  version: PropTypes.string
 };
 
 export default TableHeader;

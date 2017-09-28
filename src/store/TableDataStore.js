@@ -41,6 +41,14 @@ export class TableDataStore {
     this.selected = [];
   }
 
+  isSearching() {
+    return this.searchText !== null;
+  }
+
+  isFiltering() {
+    return this.filterObj !== null;
+  }
+
   setData(data) {
     this.data = data;
     if (this.remote) {
@@ -107,6 +115,10 @@ export class TableDataStore {
     }
   }
 
+  cleanSortInfo() {
+    this.sortList = [];
+  }
+
   setSelectedRowKey(selectedRowKeys) {
     this.selected = selectedRowKeys;
   }
@@ -118,9 +130,11 @@ export class TableDataStore {
     //   if (result.length !== 0) return result[0];
     // });
     const result = [];
+    if (!keys || keys.length === 0) {
+      return result;
+    }
     for (let i = 0; i < this.data.length; i++) {
       const d = this.data[i];
-      if (!keys || keys.length === 0) break;
       if (keys.indexOf(d[this.keyField]) > -1) {
         keys = keys.filter(k => k !== d[this.keyField]);
         result.push(d);
@@ -227,7 +241,7 @@ export class TableDataStore {
   }
 
   isValidKey = key => {
-    if (!key || key.toString() === '') {
+    if (key === null || key === undefined || key.toString() === '') {
       return `${this.keyField} can't be empty value.`;
     }
     const currentDisplayData = this.getCurrentDisplayData();
@@ -321,6 +335,10 @@ export class TableDataStore {
     const filterDate = filterVal.getDate();
     const filterMonth = filterVal.getMonth();
     const filterYear = filterVal.getFullYear();
+
+    if (typeof targetVal !== 'object') {
+      targetVal = new Date(targetVal);
+    }
 
     const targetDate = targetVal.getDate();
     const targetMonth = targetVal.getMonth();
@@ -418,6 +436,14 @@ export class TableDataStore {
     }
   }
 
+  /**
+   * Filter if targetVal is contained in filterVal.
+   */
+  filterArray(targetVal, filterVal) {
+    // case insensitive
+    return filterVal.indexOf(targetVal) > -1;
+  }
+
   /* General search function
    * It will search for the text if the input includes that text;
    */
@@ -470,6 +496,13 @@ export class TableDataStore {
           filterVal = filterObj[key].value;
           break;
         }
+        case Const.FILTER_TYPE.ARRAY: {
+          filterVal = filterObj[key].value;
+          if (!Array.isArray(filterVal)) {
+            throw new Error('Value must be an Array');
+          }
+          break;
+        }
         default: {
           filterVal = filterObj[key].value;
           if (filterVal === undefined) {
@@ -508,6 +541,10 @@ export class TableDataStore {
         case Const.FILTER_TYPE.CUSTOM: {
           const cond = filterObj[key].props ? filterObj[key].props.cond : Const.FILTER_COND_LIKE;
           valid = this.filterCustom(targetVal, filterVal, filterObj[key].value, cond);
+          break;
+        }
+        case Const.FILTER_TYPE.ARRAY: {
+          valid = this.filterArray(targetVal, filterVal);
           break;
         }
         default: {

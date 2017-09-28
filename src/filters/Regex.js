@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import Const from '../Const';
 
 class RegexFilter extends Component {
@@ -41,11 +42,12 @@ class RegexFilter extends Component {
   }
 
   render() {
-    const { defaultValue, placeholder, columnName } = this.props;
+    const { defaultValue, placeholder, columnName, style } = this.props;
     return (
       <input ref='inputText'
           className='filter text-filter form-control'
           type='text'
+          style={ style }
           onChange={ this.filter }
           placeholder={ placeholder || `Enter Regex for ${columnName}...` }
           defaultValue={ (defaultValue) ? defaultValue : '' } />
@@ -58,7 +60,8 @@ RegexFilter.propTypes = {
   defaultValue: PropTypes.string,
   delay: PropTypes.number,
   placeholder: PropTypes.string,
-  columnName: PropTypes.string
+  columnName: PropTypes.string,
+  style: PropTypes.oneOfType([ PropTypes.object ])
 };
 
 RegexFilter.defaultProps = {

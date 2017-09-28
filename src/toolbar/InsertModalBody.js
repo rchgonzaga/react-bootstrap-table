@@ -1,5 +1,6 @@
 /* eslint react/display-name: 0 */
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 
 import editor from '../Editor';
 
@@ -53,12 +54,16 @@ class InsertModalBody extends Component {
               placeholder: editable.placeholder ? editable.placeholder : name
             };
             let fieldElement;
-
+            const defaultValue = editable.defaultValue || undefined;
             if (customInsertEditor) {
               const { getElement } = customInsertEditor;
-              fieldElement = getElement(column, attr, 'form-control', ignoreEditable);
-            } else {
-              fieldElement = editor(editable, attr, format, '', undefined, ignoreEditable);
+              fieldElement = getElement(column, attr, 'form-control', ignoreEditable, defaultValue);
+            }
+
+            // fieldElement = false, means to use default editor when enable custom editor
+            // Becasuse some users want to have default editor based on some condition.
+            if (!customInsertEditor || fieldElement === false) {
+              fieldElement = editor(editable, attr, format, '', defaultValue, ignoreEditable);
             }
 
             if (autoValue || hiddenOnInsert || !column.field) {

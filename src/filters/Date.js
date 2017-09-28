@@ -1,6 +1,7 @@
 /* eslint quotes: 0 */
 /* eslint max-len: 0 */
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import Const from '../Const';
 
 const legalComparators = [ '=', '>', '>=', '<', '<=', '!=' ];
@@ -63,7 +64,7 @@ class DateFilter extends Component {
   cleanFiltered() {
     const value = this.setDefaultDate();
     const comparator = (this.props.defaultValue) ? this.props.defaultValue.comparator : '';
-    this.setState({ isPlaceholderSelected: (value === '') });
+    this.setState(() => { return { isPlaceholderSelected: (value === '') }; });
     this.refs.dateFilterComparator.value = comparator;
     this.refs.inputDate.value = value;
     this.props.filterHandler({ date: new Date(value), comparator }, Const.FILTER_TYPE.DATE);
@@ -71,7 +72,7 @@ class DateFilter extends Component {
 
   applyFilter(filterDateObj) {
     const { date, comparator } = filterDateObj;
-    this.setState({ isPlaceholderSelected: (date === '') });
+    this.setState(() => { return { isPlaceholderSelected: (date === '') }; });
     this.refs.dateFilterComparator.value = comparator;
     this.refs.inputDate.value = dateParser(date);
     this.props.filterHandler({ date, comparator }, Const.FILTER_TYPE.DATE);
@@ -86,10 +87,11 @@ class DateFilter extends Component {
   }
 
   render() {
-    const { defaultValue } = this.props;
+    const { defaultValue, style: { date, comparator } } = this.props;
     return (
       <div className='filter date-filter'>
         <select ref='dateFilterComparator'
+                style={ comparator }
                 className='date-filter-comparator form-control'
                 onChange={ this.onChangeComparator }
                 defaultValue={ (defaultValue) ? defaultValue.comparator : '' }>
@@ -97,6 +99,7 @@ class DateFilter extends Component {
         </select>
         <input ref='inputDate'
            className='filter date-filter-input form-control'
+           style={ date }
            type='date'
            onChange={ this.filter }
            defaultValue={ this.setDefaultDate() } />
@@ -110,6 +113,10 @@ DateFilter.propTypes = {
   defaultValue: PropTypes.shape({
     date: PropTypes.object,
     comparator: PropTypes.oneOf(legalComparators)
+  }),
+  style: PropTypes.shape({
+    date: PropTypes.oneOfType([ PropTypes.object ]),
+    comparator: PropTypes.oneOfType([ PropTypes.object ])
   }),
   /* eslint consistent-return: 0 */
   dateComparators: function(props, propName) {
@@ -132,5 +139,13 @@ DateFilter.propTypes = {
   },
   columnName: PropTypes.string
 };
+
+DateFilter.defaultProps = {
+  style: {
+    date: null,
+    comparator: null
+  }
+};
+
 
 export default DateFilter;

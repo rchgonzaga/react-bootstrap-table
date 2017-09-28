@@ -1,4 +1,5 @@
 /* eslint max-len: 0 */
+require('./style.css');
 import React from 'react';
 import ExpandRow from './expandRow';
 import SingleExpandRow from './single-expanding';
@@ -7,7 +8,9 @@ import ManageExpandExternal from './manage-expanding';
 import ExpandWithSelection from './expand-row-with-selection';
 import ExpandWithCellEdit from './expand-row-with-cellEdit';
 import ExpandIndicator from './expand-indicator';
+import CustomExpandClassName from './custom-expand-class';
 import CustomExpandIndicator from './custom-expand-indicator';
+import AutoCollapse from './auto-collapse';
 import renderLinks from '../utils';
 
 import { Col, Panel } from 'react-bootstrap';
@@ -29,6 +32,10 @@ class Demo extends React.Component {
           { renderLinks('expandRow/expand-indicator.js') }
           <ExpandIndicator/>
         </Panel>
+        <Panel header={ 'Custom Expand Row ClassName' }>
+          { renderLinks('expandRow/custom-expand-class.js') }
+          <CustomExpandClassName/>
+        </Panel>
         <Panel header={ 'Custom Row Expand Indicator' }>
           { renderLinks('expandRow/custom-expand-indicator.js') }
           <CustomExpandIndicator/>
@@ -40,6 +47,7 @@ class Demo extends React.Component {
           <ExpandByColumn/>
         </Panel>
         <Panel header={ 'Manage the Expanding Row External' }>
+          <span>Use <code>options.onExpand</code> to know if a row is ready to expand or not</span>
           { renderLinks('expandRow/expand-row-by-column.js') }
           <ManageExpandExternal/>
         </Panel>
@@ -52,6 +60,10 @@ class Demo extends React.Component {
         <Panel header={ 'Expand Row with CellEdit' }>
           { renderLinks('expandRow/expand-row-with-cellEdit.js') }
           <ExpandWithCellEdit/>
+        </Panel>
+        <Panel header={ 'Auto Collapse Expanding Rows When Sort, Search or Flter' }>
+          { renderLinks('expandRow/auto-collapse.js') }
+          <AutoCollapse/>
         </Panel>
       </Col>
     );

@@ -1,6 +1,8 @@
 /* eslint no-nested-ternary: 0 */
 import classSet from 'classnames';
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import Utils from './util';
 
 class TableRow extends Component {
 
@@ -13,7 +15,9 @@ class TableRow extends Component {
     const rowIndex = this.props.index + 1;
     const cellIndex = e.target.cellIndex;
     if (this.props.onRowClick) this.props.onRowClick(rowIndex, cellIndex);
-    const { selectRow, unselectableRow, isSelected, onSelectRow, onExpandRow } = this.props;
+    const {
+      selectRow, unselectableRow, isSelected, onSelectRow, onExpandRow, dbClickToEdit
+    } = this.props;
     if (selectRow) {
       if (selectRow.clickToSelect && !unselectableRow) {
         onSelectRow(rowIndex, !isSelected, e);
@@ -31,7 +35,9 @@ class TableRow extends Component {
           this.clickNum = 0;
         }, 200);
       } else {
-        this.expandRow(rowIndex, cellIndex);
+        if (dbClickToEdit) {
+          this.expandRow(rowIndex, cellIndex);
+        }
       }
     }
   }
@@ -72,20 +78,31 @@ class TableRow extends Component {
 
   render() {
     this.clickNum = 0;
-    const { selectRow, row, isSelected } = this.props;
+    const { selectRow, row, isSelected, className, index } = this.props;
+    let { style } = this.props;
     let backgroundColor = null;
+    let selectRowClass = null;
 
     if (selectRow) {
-      backgroundColor = typeof selectRow.bgColor === 'function' ?
+      backgroundColor = Utils.isFunction(selectRow.bgColor) ?
         selectRow.bgColor(row, isSelected) : ( isSelected ? selectRow.bgColor : null);
+
+      selectRowClass = Utils.isFunction(selectRow.className) ?
+        selectRow.className(row, isSelected) : ( isSelected ? selectRow.className : null);
     }
 
+    if (Utils.isFunction(style)) {
+      style = style(row, index);
+    } else {
+      style = { ...style } || {};
+    }
+    // the bgcolor of row selection always overwrite the bgcolor defined by global.
+    if (style && backgroundColor && isSelected) {
+      style.backgroundColor = backgroundColor;
+    }
     const trCss = {
-      style: { backgroundColor },
-      className: classSet(
-        isSelected ? selectRow.className : null,
-        this.props.className
-      )
+      style: { ...style },
+      className: classSet(selectRowClass, className)
     };
 
     return (
@@ -100,6 +117,7 @@ class TableRow extends Component {
 TableRow.propTypes = {
   index: PropTypes.number,
   row: PropTypes.any,
+  style: PropTypes.any,
   isSelected: PropTypes.bool,
   enableCellEdit: PropTypes.bool,
   onRowClick: PropTypes.func,

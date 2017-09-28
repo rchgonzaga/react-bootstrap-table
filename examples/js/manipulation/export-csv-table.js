@@ -38,9 +38,10 @@ export default class ExportCSVTable extends React.Component {
   }
 
   render() {
+    const options = { exportCSVSeparator: '##' };
     return (
-      <BootstrapTable data={ products } exportCSV={ true }>
-          <TableHeaderColumn dataField='id' isKey={ true }>Product ID</TableHeaderColumn>
+      <BootstrapTable data={ products } exportCSV={ true } options={ options }>
+          <TableHeaderColumn dataField='id' isKey={ true } csvFieldType='number'>Product ID</TableHeaderColumn>
           <TableHeaderColumn dataField='name' csvHeader='product-name'>Product Name</TableHeaderColumn>
           <TableHeaderColumn dataField='price' csvFormat={ this.csvPriceFormatter }>Product Price</TableHeaderColumn>
           <TableHeaderColumn dataField='quality' csvFormat={ this.csvQualityFormatter } csvFormatExtraData={ qualityType }>Product Quality</TableHeaderColumn>

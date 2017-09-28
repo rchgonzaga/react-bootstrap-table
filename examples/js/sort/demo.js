@@ -1,4 +1,5 @@
 /* eslint max-len: 0 */
+require('./style.css');
 import React from 'react';
 import SortTable from './sort-table';
 import MultiSortTable from './multi-sort-table';
@@ -11,6 +12,9 @@ import SortHookTable from './sort-hook-table';
 import DisableSortIndicatorTable from './disable-sort-indicator-table';
 import CustomCaretSortTable from './custom-caret-sort-table';
 import ExternalMultiSort from './manage-multi-sort-external-table';
+import DefaultASCSortTable from './default-asc-sort-table';
+import CleanSortedTable from './clean-sorted-table';
+import SortStyleTable from './sort-style-table';
 
 class Demo extends React.Component {
   render() {
@@ -90,6 +94,15 @@ class Demo extends React.Component {
         </div>
         <div className='col-md-offset-1 col-md-8'>
           <div className='panel panel-default'>
+            <div className='panel-heading'>Sort Style Example</div>
+            <div className='panel-body'>
+              <h5>Source in /examples/js/sort/sort-style-table.js</h5>
+              <SortStyleTable />
+            </div>
+          </div>
+        </div>
+        <div className='col-md-offset-1 col-md-8'>
+          <div className='panel panel-default'>
             <div className='panel-heading'>Sort Hooks(onSortChange) Example</div>
             <div className='panel-body'>
               <h5>Source in /examples/js/sort/sort-hook-table.js</h5>
@@ -112,6 +125,24 @@ class Demo extends React.Component {
             <div className='panel-body'>
               <h5>Source in /examples/js/sort/custom-caret-sort-table.js</h5>
               <CustomCaretSortTable />
+            </div>
+          </div>
+        </div>
+        <div className='col-md-offset-1 col-md-8'>
+          <div className='panel panel-default'>
+            <div className='panel-heading'>Default ASC as First Sort Order</div>
+            <div className='panel-body'>
+              <h5>Source in /examples/js/sort/default-asc-sort-table.js</h5>
+              <DefaultASCSortTable />
+            </div>
+          </div>
+        </div>
+        <div className='col-md-offset-1 col-md-8'>
+          <div className='panel panel-default'>
+            <div className='panel-heading'>Clean Sorted Table</div>
+            <div className='panel-body'>
+              <h5>Source in /examples/js/sort/clean-sorted-table.js</h5>
+              <CleanSortedTable />
             </div>
           </div>
         </div>

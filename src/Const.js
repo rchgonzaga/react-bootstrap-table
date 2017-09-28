@@ -1,6 +1,7 @@
 const CONST_VAR = {
   SORT_DESC: 'desc',
   SORT_ASC: 'asc',
+  AWAIT_BEFORE_CELL_EDIT: 1,
   SIZE_PER_PAGE: 10,
   NEXT_PAGE: '>',
   NEXT_PAGE_TITLE: 'next page',
@@ -23,6 +24,9 @@ const CONST_VAR = {
   PAGINATION_POS_TOP: 'top',
   PAGINATION_POS_BOTTOM: 'bottom',
   PAGINATION_POS_BOTH: 'both',
+  TOOLBAR_POS_TOP: 'top',
+  TOOLBAR_POS_BOTTOM: 'bottom',
+  TOOLBAR_POS_BOTH: 'both',
   NO_DATA_TEXT: 'There is no data to display',
   SHOW_ONLY_SELECT: 'Show Selected Only',
   SHOW_ALL: 'Show All',
@@ -40,13 +44,13 @@ const CONST_VAR = {
     SELECT: 'SelectFilter',
     NUMBER: 'NumberFilter',
     DATE: 'DateFilter',
-    CUSTOM: 'CustomFilter'
+    CUSTOM: 'CustomFilter',
+    ARRAY: 'ArrayFilter'
   },
   FILTER_COND_EQ: 'eq',
   FILTER_COND_LIKE: 'like',
   EXPAND_BY_ROW: 'row',
   EXPAND_BY_COL: 'column',
-  CANCEL_TOASTR: 'Pressed ESC can cancel',
   REMOTE_SORT: 'sort',
   REMOTE_PAGE: 'pagination',
   REMOTE_CELL_EDIT: 'cellEdit',
@@ -54,7 +58,14 @@ const CONST_VAR = {
   REMOTE_DROP_ROW: 'dropRow',
   REMOTE_FILTER: 'filter',
   REMOTE_SEARCH: 'search',
-  REMOTE_EXPORT_CSV: 'exportCSV'
+  REMOTE_EXPORT_CSV: 'exportCSV',
+  INSERT_FAIL_INDICATOR: 'Validation errors, please check!',
+  DEFAULT_CSV_SEPARATOR: ',',
+  CSV_STRING_TYPE: 'string',
+  CSV_NUMBER_TYPE: 'number',
+  AUTO_COLLAPSE_WHEN_SORT: false,
+  AUTO_COLLAPSE_WHEN_SEARCH: false,
+  AUTO_COLLAPSE_WHEN_FILTER: false
 };
 
 CONST_VAR.REMOTE = {};

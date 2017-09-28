@@ -1,11 +1,12 @@
 /* eslint no-console: 0 */
 
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import Modal from 'react-modal';
 // import classSet from 'classnames';
 import Const from '../Const';
 // import editor from '../Editor';
-import Notifier from '../Notification.js';
+import { notice } from '../Notification.js';
 import InsertModal from './InsertModal';
 import InsertButton from './InsertButton';
 import DeleteButton from './DeleteButton';
@@ -65,10 +66,7 @@ class ToolBar extends Component {
   }
 
   displayCommonMessage = () => {
-    this.refs.notifier.notice(
-      'error',
-      'Form validate errors, please checking!',
-      'Pressed ESC can cancel');
+    notice('error', this.props.insertFailIndicator, '');
   }
 
   validateNewRow(newRow) {
@@ -86,17 +84,17 @@ class ToolBar extends Component {
           validateState[column.field] = tempMsg;
         }
       } else if (column.editable && column.editable.validator) { // process validate
-        tempMsg = column.editable.validator(newRow[column.field]);
+        tempMsg = column.editable.validator(newRow[column.field], newRow);
         responseType = typeof tempMsg;
         if (responseType !== 'object' && tempMsg !== true) {
           this.displayCommonMessage();
           isValid = false;
           validateState[column.field] = tempMsg;
         } else if (responseType === 'object' && tempMsg.isValid !== true) {
-          this.refs.notifier.notice(
-              tempMsg.notification.type,
-              tempMsg.notification.msg,
-              tempMsg.notification.title);
+          notice(
+            tempMsg.notification.type,
+            tempMsg.notification.msg,
+            tempMsg.notification.title);
           isValid = false;
           validateState[column.field] = tempMsg.notification.msg;
         }
@@ -108,9 +106,9 @@ class ToolBar extends Component {
     } else {
       this.clearTimeout();
       // show error in form and shake it
-      this.setState({ validateState, shakeEditor: true });
+      this.setState(() => { return { validateState, shakeEditor: true }; });
       this.timeouteClear = setTimeout(() => {
-        this.setState({ shakeEditor: false });
+        this.setState(() => { return { shakeEditor: false }; });
       }, 300);
       return null;
     }
@@ -121,39 +119,51 @@ class ToolBar extends Component {
       return;
     }
     const msg = this.props.onAddRow(newRow);
+    if (msg !== false) {
+      this.afterHandleSaveBtnClick(msg);
+    }
+  }
+
+  afterHandleSaveBtnClick = (msg) => {
     if (msg) {
-      this.refs.notifier.notice('error', msg, 'Pressed ESC can cancel');
+      notice('error', msg, '');
       this.clearTimeout();
       // shake form and hack prevent modal hide
-      this.setState({
-        shakeEditor: true,
-        validateState: 'this is hack for prevent bootstrap modal hide'
+      this.setState(() => {
+        return {
+          shakeEditor: true,
+          validateState: 'this is hack for prevent bootstrap modal hide'
+        };
       });
       // clear animate class
       this.timeouteClear = setTimeout(() => {
-        this.setState({ shakeEditor: false });
+        this.setState(() => { return { shakeEditor: false }; });
       }, 300);
     } else {
       // reset state and hide modal hide
-      this.setState({
-        validateState: null,
-        shakeEditor: false,
-        isInsertModalOpen: false
+      this.setState(() => {
+        return {
+          validateState: null,
+          shakeEditor: false,
+          isInsertModalOpen: false
+        };
       });
     }
   }
 
   handleModalClose = () => {
-    this.setState({ isInsertModalOpen: false });
+    this.setState(() => { return { isInsertModalOpen: false }; });
   }
 
   handleModalOpen = () => {
-    this.setState({ isInsertModalOpen: true });
+    this.setState(() => { return { isInsertModalOpen: true }; });
   }
 
   handleShowOnlyToggle = () => {
-    this.setState({
-      showSelected: !this.state.showSelected
+    this.setState(() => {
+      return {
+        showSelected: !this.state.showSelected
+      };
     });
     this.props.onShowOnlySelected();
   }
@@ -306,22 +316,20 @@ class ToolBar extends Component {
         }
       });
     } else {
-      toolbar = (
-        <div>
-          <div className='col-xs-6 col-sm-6 col-md-6 col-lg-8'>
-            { this.props.searchPosition === 'left' ? searchPanel : btnGroup }
-          </div>
-          <div className='col-xs-6 col-sm-6 col-md-6 col-lg-4'>
-            { this.props.searchPosition === 'left' ? btnGroup : searchPanel }
-          </div>
+      toolbar = [ (
+        <div key='toolbar-left' className='col-xs-6 col-sm-6 col-md-6 col-lg-8'>
+          { this.props.searchPosition === 'left' ? searchPanel : btnGroup }
         </div>
-      );
+      ), (
+        <div key='toolbar-right' className='col-xs-6 col-sm-6 col-md-6 col-lg-4'>
+          { this.props.searchPosition === 'left' ? btnGroup : searchPanel }
+        </div>
+      ) ];
     }
 
     return (
       <div className='row'>
         { toolbar }
-        <Notifier ref='notifier' />
         { modal }
       </div>
     );
@@ -396,6 +404,7 @@ class ToolBar extends Component {
   renderInsertRowModal() {
     const validateState = this.state.validateState || {};
     const {
+      version,
       columns,
       ignoreEditable,
       insertModalHeader,
@@ -416,6 +425,7 @@ class ToolBar extends Component {
     if (!modal) {
       modal = (
         <InsertModal
+          version={ version }
           columns={ columns }
           validateState={ validateState }
           ignoreEditable={ ignoreEditable }
@@ -449,6 +459,7 @@ class ToolBar extends Component {
 }
 
 ToolBar.propTypes = {
+  version: PropTypes.string,
   onAddRow: PropTypes.func,
   onDropRow: PropTypes.func,
   onShowOnlySelected: PropTypes.func,
@@ -481,7 +492,8 @@ ToolBar.propTypes = {
   toolBar: PropTypes.func,
   searchPosition: PropTypes.string,
   reset: PropTypes.bool,
-  isValidKey: PropTypes.func
+  isValidKey: PropTypes.func,
+  insertFailIndicator: PropTypes.string
 };
 
 ToolBar.defaultProps = {

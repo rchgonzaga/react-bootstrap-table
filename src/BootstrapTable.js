@@ -1,8 +1,11 @@
 /* eslint no-alert: 0 */
 /* eslint max-len: 0 */
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import classSet from 'classnames';
+import Alert from 'react-s-alert';
 import Const from './Const';
+import TableHeaderColumn from './TableHeaderColumn';
 import TableHeader from './TableHeader';
 import TableBody from './TableBody';
 import PaginationList from './pagination/PaginationList';
@@ -13,12 +16,12 @@ import Util from './util';
 import exportCSVUtil from './csv_export_util';
 import { Filter } from './Filter';
 
+
 class BootstrapTable extends Component {
 
   constructor(props) {
     super(props);
     this.isIE = false;
-    this._attachCellEditFunc();
     if (Util.canUseDOM()) {
       this.isIE = document.documentMode;
     }
@@ -54,13 +57,29 @@ class BootstrapTable extends Component {
   }
 
   initTable(props) {
+    // If columns changed, clean removed columns that had filters
+    if (props.children !== this.props.children && this.filter) {
+      const nextDataFields = React.Children.map(props.children, column => column.props.dataField);
+      React.Children.forEach(this.props.children, column => {
+        const { dataField, filter } = column.props;
+        if (!nextDataFields.includes(dataField)) {
+          // Clear filter
+          this.filter.handleFilter(dataField, '', filter.type, filter);
+        }
+      });
+    }
+
     let { keyField } = props;
 
     const isKeyFieldDefined = typeof keyField === 'string' && keyField.length;
     React.Children.forEach(props.children, column => {
+      if (column === null || column === undefined) {
+        // Skip null and undefined value
+        return;
+      }
       if (column.props.isKey) {
         if (keyField) {
-          throw new Error('Error. Multiple key column be detected in TableHeaderColumn.');
+          throw new Error('Error. Multiple key column detected in TableHeaderColumn.');
         }
         keyField = column.props.dataField;
       }
@@ -75,6 +94,7 @@ class BootstrapTable extends Component {
       }
     });
 
+    // if a column filter was created, add 'onFilterChange' listener
     if (this.filter) {
       this.filter.removeAllListeners('onFilterChange');
       this.filter.on('onFilterChange', (currentFilter) => {
@@ -109,9 +129,12 @@ class BootstrapTable extends Component {
     const sortName = options.defaultSortName || options.sortName;
     const sortOrder = options.defaultSortOrder || options.sortOrder;
     const searchText = options.defaultSearch;
+
     if (sortName && sortOrder) {
       this.store.setSortInfo(sortOrder, sortName);
-      this.store.sort();
+      if (!this.allowRemote(Const.REMOTE_SORT)) {
+        this.store.sort();
+      }
     }
 
     if (searchText) {
@@ -138,126 +161,182 @@ class BootstrapTable extends Component {
   getColumnsDescription({ children }) {
     let rowCount = 0;
     React.Children.forEach(children, (column) => {
+      if (column === null || column === undefined) {
+        // Skip null and undefined value
+        return;
+      }
+
       if (Number(column.props.row) > rowCount) {
         rowCount = Number(column.props.row);
       }
     });
     return React.Children.map(children, (column, i) => {
+      if (column === null || column === undefined) {
+        // Return null for empty objects
+        return null;
+      }
+
       const rowIndex = column.props.row ? Number(column.props.row) : 0;
       const rowSpan = column.props.rowSpan ? Number(column.props.rowSpan) : 1;
       if ((rowSpan + rowIndex) === (rowCount + 1)) {
-        return {
-          name: column.props.dataField,
-          align: column.props.dataAlign,
-          sort: column.props.dataSort,
-          format: column.props.dataFormat,
-          formatExtraData: column.props.formatExtraData,
-          filterFormatted: column.props.filterFormatted,
-          filterValue: column.props.filterValue,
-          editable: column.props.editable,
-          customEditor: column.props.customEditor,
-          hidden: column.props.hidden,
-          hiddenOnInsert: column.props.hiddenOnInsert,
-          searchable: column.props.searchable,
-          className: column.props.columnClassName,
-          editClassName: column.props.editColumnClassName,
-          invalidEditColumnClassName: column.props.invalidEditColumnClassName,
-          columnTitle: column.props.columnTitle,
-          width: column.props.width,
-          text: column.props.headerText || column.props.children,
-          sortFunc: column.props.sortFunc,
-          sortFuncExtraData: column.props.sortFuncExtraData,
-          export: column.props.export,
-          expandable: column.props.expandable,
-          index: i,
-          attrs: column.props.tdAttr,
-          style: column.props.tdStyle
-        };
+        const columnDescription = this.getColumnDescription(column);
+
+        columnDescription.index = i;
+        return columnDescription;
       }
     });
+  }
+
+  getColumnDescription(column) {
+    let columnDescription = {
+      name: column.props.dataField,
+      align: column.props.dataAlign,
+      sort: column.props.dataSort,
+      format: column.props.dataFormat,
+      formatExtraData: column.props.formatExtraData,
+      filterFormatted: column.props.filterFormatted,
+      filterValue: column.props.filterValue,
+      editable: column.props.editable,
+      customEditor: column.props.customEditor,
+      hidden: column.props.hidden,
+      hiddenOnInsert: column.props.hiddenOnInsert,
+      searchable: column.props.searchable,
+      className: column.props.columnClassName,
+      editClassName: column.props.editColumnClassName,
+      invalidEditColumnClassName: column.props.invalidEditColumnClassName,
+      columnTitle: column.props.columnTitle,
+      width: column.props.width,
+      text: column.props.headerText || column.props.children,
+      sortFunc: column.props.sortFunc,
+      sortFuncExtraData: column.props.sortFuncExtraData,
+      export: column.props.export,
+      expandable: column.props.expandable,
+      attrs: column.props.tdAttr,
+      editAttrs: column.props.editTdAttr,
+      style: column.props.tdStyle
+    };
+
+    if (column.type.name !== TableHeaderColumn.name && React.isValidElement(column.props.children)) {
+      columnDescription = {
+        ...columnDescription,
+        ...this.getColumnDescription(React.Children.only(column.props.children))
+      };
+    }
+
+    return columnDescription;
   }
 
   reset() {
     const { pageStartIndex } = this.props.options;
     this.store.clean();
-    this.setState({
-      data: this.getTableData(),
-      currPage: Util.getFirstPage(pageStartIndex),
-      expanding: [],
-      sizePerPage: Const.SIZE_PER_PAGE_LIST[0],
-      selectedRowKeys: this.store.getSelectedRowKeys(),
-      reset: true
+    this.refs.body.setState({ currEditCell: null });
+    this.setState(() => {
+      return {
+        data: this.getTableData(),
+        currPage: Util.getFirstPage(pageStartIndex),
+        expanding: [],
+        sizePerPage: Const.SIZE_PER_PAGE_LIST[0],
+        selectedRowKeys: [],
+        reset: true
+      };
     });
   }
 
   componentWillReceiveProps(nextProps) {
     this.initTable(nextProps);
     const { options, selectRow } = nextProps;
+    let { replace } = nextProps;
+    replace = replace || this.props.replace;
 
+    if (!nextProps.data) {
+      return;
+    }
     this.store.setData(nextProps.data.slice());
 
-    // from #481
-    let page = this.state.currPage;
-    if (this.props.options.page !== options.page) {
-      page = options.page;
-    }
-    // from #481
-    let sizePerPage = this.state.sizePerPage;
-    if (this.props.options.sizePerPage !== options.sizePerPage) {
-      sizePerPage = options.sizePerPage;
-    }
-
-    if (this.isRemoteDataSource()) {
-      let data = nextProps.data.slice();
-      if (nextProps.pagination && !this.allowRemote(Const.REMOTE_PAGE)) {
-        data = this.store.page(page, sizePerPage).get();
+    if (!replace) {
+      // from #481
+      let page = this.state.currPage;
+      if (this.props.options.page !== options.page) {
+        page = options.page;
       }
-      this.setState({
-        data,
-        currPage: page,
-        sizePerPage,
-        reset: false
-      });
+      // from #481
+      let sizePerPage = this.state.sizePerPage;
+      if (this.props.options.sizePerPage !== options.sizePerPage) {
+        sizePerPage = options.sizePerPage;
+      }
+
+      if (this.isRemoteDataSource()) {
+        const newState = { sizePerPage, reset: false, currPage: page };
+        let data = nextProps.data.slice();
+        if (nextProps.pagination && !this.allowRemote(Const.REMOTE_PAGE)) {
+          data = this.store.page(page, sizePerPage).get();
+        }
+
+        if (this.store.isOnFilter) {
+          if (this.store.searchText) this.handleSearch(this.store.searchText);
+          if (this.store.filterObj) this.handleFilterData(this.store.filterObj);
+          newState.currPage = Util.getFirstPage(nextProps.options.pageStartIndex);
+        } else {
+          newState.data = data;
+        }
+        this.setState(() => newState);
+      } else {
+        // #125
+        // remove !options.page for #709
+        if (page > Math.ceil(nextProps.data.length / sizePerPage)) {
+          page = 1;
+        }
+        const sortList = this.store.getSortInfo();
+        const sortField = options.sortName;
+        const sortOrder = options.sortOrder;
+        if (sortField && sortOrder) {
+          this.store.setSortInfo(sortOrder, sortField);
+          this.store.sort();
+        } else if (sortList.length > 0) {
+          this.store.sort();
+        }
+        const data = this.store.page(page, sizePerPage).get();
+        this.setState(() => {
+          return {
+            data,
+            currPage: page,
+            sizePerPage,
+            reset: false
+          };
+        });
+
+        if (this.store.isSearching && options.afterSearch) {
+          options.afterSearch(this.store.searchText, this.store.getDataIgnoringPagination());
+        }
+
+        if (this.store.isFiltering && options.afterColumnFilter) {
+          options.afterColumnFilter(this.store.filterObj, this.store.getDataIgnoringPagination());
+        }
+      }
+
+      // If setting the expanded rows is being handled externally
+      // then overwrite the current expanded rows.
+      if (this.props.options.expanding !== options.expanding) {
+        this.setState(() => {
+          return {
+            expanding: options.expanding || []
+          };
+        });
+      }
+
+      if (selectRow && selectRow.selected) {
+        // set default select rows to store.
+        const copy = selectRow.selected.slice();
+        this.store.setSelectedRowKey(copy);
+        this.setState(() => {
+          return {
+            selectedRowKeys: copy,
+            reset: false
+          };
+        });
+      }
     } else {
-      // #125
-      // remove !options.page for #709
-      if (page > Math.ceil(nextProps.data.length / sizePerPage)) {
-        page = 1;
-      }
-      const sortList = this.store.getSortInfo();
-      const sortField = options.sortName;
-      const sortOrder = options.sortOrder;
-      if (sortField && sortOrder) {
-        this.store.setSortInfo(sortOrder, sortField);
-        this.store.sort();
-      } else if (sortList.length > 0) {
-        this.store.sort();
-      }
-      const data = this.store.page(page, sizePerPage).get();
-      this.setState({
-        data,
-        currPage: page,
-        sizePerPage,
-        reset: false
-      });
-    }
-
-    // If setting the expanded rows is being handled externally
-    // then overwrite the current expanded rows.
-    if (this.props.options.expanding !== options.expanding) {
-      this.setState({
-        expanding: options.expanding || []
-      });
-    }
-
-    if (selectRow && selectRow.selected) {
-      // set default select rows to store.
-      const copy = selectRow.selected.slice();
-      this.store.setSelectedRowKey(copy);
-      this.setState({
-        selectedRowKeys: copy,
-        reset: false
-      });
+      this.reset();
     }
   }
 
@@ -272,7 +351,9 @@ class BootstrapTable extends Component {
 
   componentWillUnmount() {
     window.removeEventListener('resize', this._adjustTable);
-    this.refs.body.refs.container.removeEventListener('scroll', this._scrollHeader);
+    if (this.refs && this.refs.body && this.refs.body.refs) {
+      this.refs.body.refs.container.removeEventListener('scroll', this._scrollHeader);
+    }
     if (this.filter) {
       this.filter.removeAllListeners('onFilterChange');
     }
@@ -280,19 +361,8 @@ class BootstrapTable extends Component {
 
   componentDidUpdate() {
     this._adjustTable();
-    this._attachCellEditFunc();
     if (this.props.options.afterTableComplete) {
       this.props.options.afterTableComplete();
-    }
-  }
-
-  _attachCellEditFunc() {
-    const { cellEdit } = this.props;
-    if (cellEdit) {
-      this.props.cellEdit.__onCompleteEdit__ = this.handleEditCell.bind(this);
-      if (cellEdit.mode !== Const.CELL_EDIT_NONE) {
-        this.props.selectRow.clickToSelect = false;
-      }
     }
   }
 
@@ -305,7 +375,7 @@ class BootstrapTable extends Component {
    */
   isRemoteDataSource(props) {
     const { remote } = (props || this.props);
-    return remote === true || typeof remote === 'function';
+    return remote === true || Util.isFunction(remote);
   }
 
   /**
@@ -342,25 +412,35 @@ class BootstrapTable extends Component {
     if (typeof expandColumnOptions.expandColumnBeforeSelectColumn === 'undefined') {
       expandColumnOptions.expandColumnBeforeSelectColumn = true;
     }
-    const colGroups = Util.renderColGroup(columns, this.props.selectRow, expandColumnOptions);
+    const colGroups = Util.renderColGroup(columns, this.props.selectRow, expandColumnOptions, this.props.version);
     let sortIndicator = this.props.options.sortIndicator;
     if (typeof this.props.options.sortIndicator === 'undefined') sortIndicator = true;
+
     const { paginationPosition = Const.PAGINATION_POS_BOTTOM } = this.props.options;
     const showPaginationOnTop = paginationPosition !== Const.PAGINATION_POS_BOTTOM;
     const showPaginationOnBottom = paginationPosition !== Const.PAGINATION_POS_TOP;
+    const selectRow = { ...this.props.selectRow };
+    if (this.props.cellEdit && this.props.cellEdit.mode !== Const.CELL_EDIT_NONE) {
+      selectRow.clickToSelect = false;
+    }
+
+    const { toolbarPosition = Const.TOOLBAR_POS_TOP } = this.props.options;
+    const showToolbarOnTop = toolbarPosition !== Const.TOOLBAR_POS_BOTTOM;
+    const showToolbarOnBottom = toolbarPosition !== Const.TOOLBAR_POS_TOP;
 
     return (
       <div className={ classSet('react-bs-table-container', this.props.className, this.props.containerClass) }
         style={ this.props.containerStyle }>
-        { toolBar }
+        { showToolbarOnTop ? toolBar : null }
         { showPaginationOnTop ? pagination : null }
         <div ref='table'
-            className={ classSet('react-bs-table', this.props.tableContainerClass) }
+            className={ classSet('react-bs-table', { 'react-bs-table-bordered': this.props.bordered }, this.props.tableContainerClass) }
             style={ { ...style, ...this.props.tableStyle } }
             onMouseEnter={ this.handleMouseEnter }
             onMouseLeave={ this.handleMouseLeave }>
           <TableHeader
             ref='header'
+            version={ this.props.version }
             colGroups={ colGroups }
             headerContainerClass={ this.props.headerContainerClass }
             tableHeaderClass={ this.props.tableHeaderClass }
@@ -389,18 +469,22 @@ class BootstrapTable extends Component {
             tableBodyClass={ this.props.tableBodyClass }
             style={ { ...style, ...this.props.bodyStyle } }
             data={ this.state.data }
+            version={ this.props.version }
             expandComponent={ this.props.expandComponent }
             expandableRow={ this.props.expandableRow }
             expandRowBgColor={ this.props.options.expandRowBgColor }
             expandBy={ this.props.options.expandBy || Const.EXPAND_BY_ROW }
+            expandBodyClass={ this.props.options.expandBodyClass }
+            expandParentClass={ this.props.options.expandParentClass }
             columns={ columns }
             trClassName={ this.props.trClassName }
+            trStyle={ this.props.trStyle }
             striped={ this.props.striped }
             bordered={ this.props.bordered }
             hover={ this.props.hover }
             keyField={ this.store.getKeyField() }
             condensed={ this.props.condensed }
-            selectRow={ this.props.selectRow }
+            selectRow={ selectRow }
             expandColumnOptions={ this.props.expandColumnOptions }
             cellEdit={ this.props.cellEdit }
             selectedRowKeys={ this.state.selectedRowKeys }
@@ -418,19 +502,31 @@ class BootstrapTable extends Component {
             keyBoardNav={ this.props.keyBoardNav }
             onNavigateCell={ this.handleNavigateCell }
             x={ this.state.x }
-            y={ this.state.y } />
+            y={ this.state.y }
+            withoutTabIndex={ this.props.withoutTabIndex }
+            onEditCell={ this.handleEditCell } />
         </div>
         { tableFilter }
         { showPaginationOnBottom ? pagination : null }
+
+        { showToolbarOnBottom ? toolBar : null }
+        <Alert stack={ { limit: 3 } } />
       </div>
     );
   }
 
   isSelectAll() {
     if (this.store.isEmpty()) return false;
-    const unselectable = this.props.selectRow.unselectable;
-    const defaultSelectRowKeys = this.store.getSelectedRowKeys();
-    const allRowKeys = this.store.getAllRowkey();
+    const { selectRow: { unselectable, onlyUnselectVisible } } = this.props;
+    const keyField = this.store.getKeyField();
+    const allRowKeys = onlyUnselectVisible ?
+      this.store.get().map(r => r[keyField]) :
+      this.store.getAllRowkey();
+    let defaultSelectRowKeys = this.store.getSelectedRowKeys();
+
+    if (onlyUnselectVisible) {
+      defaultSelectRowKeys = defaultSelectRowKeys.filter(x => x !== allRowKeys);
+    }
 
     if (defaultSelectRowKeys.length === 0) return false;
     let match = 0;
@@ -456,30 +552,57 @@ class BootstrapTable extends Component {
 
   cleanSelected() {
     this.store.setSelectedRowKey([]);
-    this.setState({
-      selectedRowKeys: [],
-      reset: false
+    this.setState(() => {
+      return {
+        selectedRowKeys: [],
+        reset: false
+      };
+    });
+  }
+
+  cleanSort() {
+    this.store.cleanSortInfo();
+    this.setState(() => {
+      return {
+        reset: false
+      };
     });
   }
 
   handleSort = (order, sortField) => {
-    if (this.props.options.onSortChange) {
-      this.props.options.onSortChange(sortField, order, this.props);
+    const { autoCollapse: { sort }, options } = this.props;
+    if (options.onSortChange) {
+      options.onSortChange(sortField, order, this.props);
     }
     this.store.setSortInfo(order, sortField);
     if (this.allowRemote(Const.REMOTE_SORT)) {
+      if (sort) {
+        this.setState(() => {
+          return {
+            expanding: []
+          };
+        });
+      }
       return;
     }
 
     const result = this.store.sort().get();
-    this.setState({
-      data: result,
-      reset: false
+    this.setState(() => {
+      const newState = {
+        data: result,
+        reset: false
+      };
+      if (sort) newState.expanding = [];
+      return newState;
     });
   }
 
-  handleExpandRow = expanding => {
-    this.setState({ expanding, reset: false }, () => {
+  handleExpandRow = (expanding, rowKey, isRowExpanding) => {
+    const { onExpand } = this.props.options;
+    if (onExpand) {
+      onExpand(rowKey, !isRowExpanding);
+    }
+    this.setState(() => { return { expanding, reset: false }; }, () => {
       this._adjustHeaderWidth();
     });
   }
@@ -496,14 +619,14 @@ class BootstrapTable extends Component {
       reset: false
     };
     if (!emptyTable) state.currPage = page;
-    this.setState(state);
+    this.setState(() => state);
 
     if (this.allowRemote(Const.REMOTE_PAGE) || emptyTable) {
       return;
     }
 
     const result = this.store.page(Util.getNormalizedPage(pageStartIndex, page), sizePerPage).get();
-    this.setState({ data: result, reset: false });
+    this.setState(() => { return { data: result, reset: false }; });
   }
 
   handleMouseLeave = () => {
@@ -585,24 +708,28 @@ class BootstrapTable extends Component {
         y--;
       }
     }
-    this.setState({
-      x, y, currPage, reset: false
+    this.setState(() => {
+      return {
+        x, y, currPage, reset: false
+      };
     });
   }
 
-  handleRowClick = (row, rowIndex, cellIndex) => {
+  handleRowClick = (row, rowIndex, columnIndex) => {
     const { options, keyBoardNav } = this.props;
     if (options.onRowClick) {
-      options.onRowClick(row);
+      options.onRowClick(row, columnIndex, rowIndex);
     }
     if (keyBoardNav) {
       let { clickToNav } = typeof keyBoardNav === 'object' ? keyBoardNav : {};
       clickToNav = clickToNav === false ? clickToNav : true;
       if (clickToNav) {
-        this.setState({
-          x: cellIndex,
-          y: rowIndex,
-          reset: false
+        this.setState(() => {
+          return {
+            x: columnIndex,
+            y: rowIndex,
+            reset: false
+          };
         });
       }
     }
@@ -617,12 +744,15 @@ class BootstrapTable extends Component {
   handleSelectAllRow = e => {
     const isSelected = e.currentTarget.checked;
     const keyField = this.store.getKeyField();
-    const { selectRow: { onSelectAll, unselectable, selected } } = this.props;
-    let selectedRowKeys = [];
+    const { selectRow: { onSelectAll, unselectable, selected, onlyUnselectVisible } } = this.props;
+    let selectedRowKeys = onlyUnselectVisible ? this.state.selectedRowKeys : [];
     let result = true;
-    let rows = isSelected ?
-      this.store.get() :
-      this.store.getRowByKey(this.state.selectedRowKeys);
+    let rows = this.store.get();
+
+    // onlyUnselectVisible default is false, #1276
+    if (!isSelected && !onlyUnselectVisible) {
+      rows = this.store.getRowByKey(this.state.selectedRowKeys);
+    }
 
     if (unselectable && unselectable.length > 0) {
       if (isSelected) {
@@ -641,17 +771,28 @@ class BootstrapTable extends Component {
 
     if (typeof result == 'undefined' || result !== false) {
       if (isSelected) {
-        selectedRowKeys = Array.isArray(result) ?
-          result :
-          rows.map(r => r[keyField]);
+        if (Array.isArray(result)) {
+          selectedRowKeys = result;
+        } else {
+          const currentRowKeys = rows.map(r => r[keyField]);
+          // onlyUnselectVisible default is false, #1276
+          if (onlyUnselectVisible) {
+            selectedRowKeys = selectedRowKeys.concat(currentRowKeys);
+          } else {
+            selectedRowKeys = currentRowKeys;
+          }
+        }
       } else {
         if (unselectable && selected) {
-          selectedRowKeys = selected.filter(r => unselectable.indexOf(r) > -1 );
+          selectedRowKeys = selected.filter(r => unselectable.indexOf(r) > -1);
+        } else if (onlyUnselectVisible) {
+          const currentRowKeys = rows.map(r => r[keyField]);
+          selectedRowKeys = selectedRowKeys.filter(k => currentRowKeys.indexOf(k) === -1);
         }
       }
 
       this.store.setSelectedRowKey(selectedRowKeys);
-      this.setState({ selectedRowKeys, reset: false });
+      this.setState(() => { return { selectedRowKeys, reset: false }; });
     }
   }
 
@@ -664,20 +805,22 @@ class BootstrapTable extends Component {
     } else {
       result = this.store.get();
     }
-    this.setState({
-      data: result,
-      reset: false,
-      currPage: Util.getFirstPage(pageStartIndex)
+    this.setState(() => {
+      return {
+        data: result,
+        reset: false,
+        currPage: Util.getFirstPage(pageStartIndex)
+      };
     });
   }
 
-  handleSelectRow = (row, isSelected, e) => {
+  handleSelectRow = (row, isSelected, e, rowIndex) => {
     let result = true;
     let currSelected = this.store.getSelectedRowKeys();
     const rowKey = row[ this.store.getKeyField() ];
     const { selectRow } = this.props;
     if (selectRow.onSelect) {
-      result = selectRow.onSelect(row, isSelected, e);
+      result = selectRow.onSelect(row, isSelected, e, rowIndex);
     }
 
     if (typeof result === 'undefined' || result !== false) {
@@ -692,30 +835,55 @@ class BootstrapTable extends Component {
       }
 
       this.store.setSelectedRowKey(currSelected);
-      this.setState({
-        selectedRowKeys: currSelected,
-        reset: false
+      this.setState(() => {
+        return {
+          selectedRowKeys: currSelected,
+          reset: false
+        };
       });
     }
   }
 
-  handleEditCell(newVal, rowIndex, colIndex) {
-    const { onCellEdit } = this.props.options;
-    const { beforeSaveCell, afterSaveCell } = this.props.cellEdit;
+  handleEditCell = (newVal, rowIndex, colIndex) => {
+    const { beforeSaveCell } = this.props.cellEdit;
     const columns = this.getColumnsDescription(this.props);
     const fieldName = columns[colIndex].name;
 
-    if (beforeSaveCell) {
-      const isValid = beforeSaveCell(this.state.data[rowIndex], fieldName, newVal);
-      if (!isValid && typeof isValid !== 'undefined') {
-        this.setState({
+    const invalid = () => {
+      this.setState(() => {
+        return {
           data: this.store.get(),
           reset: false
-        });
-        return;
+        };
+      });
+      return;
+    };
+
+    if (beforeSaveCell) {
+      const beforeSaveCellCB = result => {
+        this.refs.body.cancelEditCell();
+        if (result || result === undefined) {
+          this.editCell(newVal, rowIndex, colIndex);
+        } else {
+          invalid();
+        }
+      };
+      const isValid = beforeSaveCell(this.state.data[rowIndex], fieldName, newVal, beforeSaveCellCB);
+      if (isValid === false && typeof isValid !== 'undefined') {
+        return invalid();
+      } else if (isValid === Const.AWAIT_BEFORE_CELL_EDIT) {
+        /* eslint consistent-return: 0 */
+        return isValid;
       }
     }
+    this.editCell(newVal, rowIndex, colIndex);
+  }
 
+  editCell(newVal, rowIndex, colIndex) {
+    const { onCellEdit } = this.props.options;
+    const { afterSaveCell } = this.props.cellEdit;
+    const columns = this.getColumnsDescription(this.props);
+    const fieldName = columns[colIndex].name;
     if (onCellEdit) {
       newVal = onCellEdit(this.state.data[rowIndex], fieldName, newVal);
     }
@@ -728,9 +896,11 @@ class BootstrapTable extends Component {
     }
 
     const result = this.store.edit(newVal, rowIndex, fieldName).get();
-    this.setState({
-      data: result,
-      reset: false
+    this.setState(() => {
+      return {
+        data: result,
+        reset: false
+      };
     });
 
     if (afterSaveCell) {
@@ -748,25 +918,50 @@ class BootstrapTable extends Component {
   }
 
   handleAddRow = newObj => {
+    let isAsync = false;
     const { onAddRow } = this.props.options;
+
+    const afterHandleAddRow = errMsg => {
+      if (isAsync) {
+        this.refs.toolbar.afterHandleSaveBtnClick(errMsg);
+      } else {
+        return errMsg;
+      }
+    };
+
+    const afterAddRowCB = errMsg => {
+      if (typeof errMsg !== 'undefined' && errMsg !== '') return afterHandleAddRow(errMsg);
+      if (this.allowRemote(Const.REMOTE_INSERT_ROW)) {
+        if (this.props.options.afterInsertRow) {
+          this.props.options.afterInsertRow(newObj);
+        }
+        return afterHandleAddRow();
+      }
+
+      try {
+        this.store.add(newObj);
+      } catch (e) {
+        return afterHandleAddRow(e.message);
+      }
+      this._handleAfterAddingRow(newObj, false);
+      return afterHandleAddRow();
+    };
+
     if (onAddRow) {
       const colInfos = this.store.getColInfos();
-      onAddRow(newObj, colInfos);
-    }
+      const errMsg = onAddRow(newObj, colInfos, afterAddRowCB);
 
-    if (this.allowRemote(Const.REMOTE_INSERT_ROW)) {
-      if (this.props.options.afterInsertRow) {
-        this.props.options.afterInsertRow(newObj);
+      if (errMsg !== '' && errMsg !== false) {
+        return errMsg;
+      } else if (typeof errMsg === 'undefined') {
+        return afterAddRowCB();
+      } else {
+        isAsync = true;
+        return !isAsync;
       }
-      return null;
+    } else {
+      return afterAddRowCB();
     }
-
-    try {
-      this.store.add(newObj);
-    } catch (e) {
-      return e.message;
-    }
-    this._handleAfterAddingRow(newObj, false);
   }
 
   getSizePerPage() {
@@ -808,57 +1003,68 @@ class BootstrapTable extends Component {
   }
 
   deleteRow(dropRowKeys) {
-    const { onDeleteRow } = this.props.options;
+    const dropRow = this.store.getRowByKey(dropRowKeys);
+    const { onDeleteRow, afterDeleteRow, pageStartIndex } = this.props.options;
+
     if (onDeleteRow) {
-      onDeleteRow(dropRowKeys);
+      onDeleteRow(dropRowKeys, dropRow);
     }
 
     this.store.setSelectedRowKey([]);  // clear selected row key
 
-    if (this.allowRemote(Const.REMOTE_DROP_ROW)) {
-      if (this.props.options.afterDeleteRow) {
-        this.props.options.afterDeleteRow(dropRowKeys);
-      }
+    if (this.allowRemote(Const.REMOTE_DROP_ROW) && afterDeleteRow) {
+      afterDeleteRow(dropRowKeys, dropRow);
       return;
     }
 
     this.store.remove(dropRowKeys);  // remove selected Row
     let result;
     if (this.props.pagination) {
+      // debugger;
       const { sizePerPage } = this.state;
       const currLastPage = Math.ceil(this.store.getDataNum() / sizePerPage);
       let { currPage } = this.state;
       if (currPage > currLastPage) currPage = currLastPage;
-      result = this.store.page(currPage, sizePerPage).get();
-      this.setState({
-        data: result,
-        selectedRowKeys: this.store.getSelectedRowKeys(),
-        currPage,
-        reset: false
+      // console.log(Util.getNormalizedPage(currPage));
+      result = this.store.page(Util.getNormalizedPage(pageStartIndex, currPage), sizePerPage).get();
+      this.setState(() => {
+        return {
+          data: result,
+          selectedRowKeys: this.store.getSelectedRowKeys(),
+          currPage,
+          reset: false
+        };
       });
     } else {
       result = this.store.get();
-      this.setState({
-        data: result,
-        reset: false,
-        selectedRowKeys: this.store.getSelectedRowKeys()
+      this.setState(() => {
+        return {
+          data: result,
+          reset: false,
+          selectedRowKeys: this.store.getSelectedRowKeys()
+        };
       });
     }
-    if (this.props.options.afterDeleteRow) {
-      this.props.options.afterDeleteRow(dropRowKeys);
+    if (afterDeleteRow) {
+      afterDeleteRow(dropRowKeys, dropRow);
     }
   }
 
   handleFilterData = filterObj => {
-    const { onFilterChange, pageStartIndex } = this.props.options;
+    const { autoCollapse: { filter }, options } = this.props;
+    const { onFilterChange, pageStartIndex } = options;
     if (onFilterChange) {
       const colInfos = this.store.getColInfos();
       onFilterChange(filterObj, colInfos);
     }
 
-    this.setState({
-      currPage: Util.getFirstPage(pageStartIndex),
-      reset: false
+    this.setState(() => {
+      const newState = {
+        currPage: Util.getFirstPage(pageStartIndex),
+        reset: false
+      };
+      if (filter) newState.expanding = [];
+      return newState;
     });
 
     if (this.allowRemote(Const.REMOTE_FILTER)) {
@@ -888,9 +1094,11 @@ class BootstrapTable extends Component {
       this.props.options.afterColumnFilter(filterObj,
         this.store.getDataIgnoringPagination());
     }
-    this.setState({
-      data: result,
-      reset: false
+    this.setState(() => {
+      return {
+        data: result,
+        reset: false
+      };
     });
   }
 
@@ -898,20 +1106,21 @@ class BootstrapTable extends Component {
     let result = {};
 
     let { csvFileName } = this.props;
-    const { onExportToCSV } = this.props.options;
+    const { onExportToCSV, exportCSVSeparator, noAutoBOM, excludeCSVHeader } = this.props.options;
     if (onExportToCSV) {
       result = onExportToCSV();
     } else {
       result = this.store.getDataIgnoringPagination();
     }
-
+    const separator = exportCSVSeparator || Const.DEFAULT_CSV_SEPARATOR;
     const keys = [];
-    this.props.children.map(function(column) {
+    this.props.children.filter(_ => _ != null).map(function(column) {
       if (column.props.export === true ||
         (typeof column.props.export === 'undefined' &&
         column.props.hidden === false)) {
         keys.push({
           field: column.props.dataField,
+          type: column.props.csvFieldType,
           format: column.props.csvFormat,
           extraData: column.props.csvFormatExtraData,
           header: column.props.csvHeader || column.props.dataField,
@@ -922,11 +1131,11 @@ class BootstrapTable extends Component {
       }
     });
 
-    if (typeof csvFileName === 'function') {
+    if (Util.isFunction(csvFileName)) {
       csvFileName = csvFileName();
     }
 
-    exportCSVUtil(result, keys, csvFileName);
+    exportCSVUtil(result, keys, csvFileName, separator, noAutoBOM, excludeCSVHeader);
   }
 
   handleSearch = searchText => {
@@ -935,15 +1144,20 @@ class BootstrapTable extends Component {
     if (this.refs.toolbar) {
       this.refs.toolbar.setSearchInput(searchText);
     }
+    const { autoCollapse: { search } } = this.props;
     const { onSearchChange, pageStartIndex } = this.props.options;
     if (onSearchChange) {
       const colInfos = this.store.getColInfos();
       onSearchChange(searchText, colInfos, this.props.multiColumnSearch);
     }
 
-    this.setState({
-      currPage: Util.getFirstPage(pageStartIndex),
-      reset: false
+    this.setState(() => {
+      const newState = {
+        currPage: Util.getFirstPage(pageStartIndex),
+        reset: false
+      };
+      if (search) newState.expanding = [];
+      return newState;
     });
 
     if (this.allowRemote(Const.REMOTE_SEARCH)) {
@@ -973,9 +1187,11 @@ class BootstrapTable extends Component {
       this.props.options.afterSearch(searchText,
         this.store.getDataIgnoringPagination());
     }
-    this.setState({
-      data: result,
-      reset: false
+    this.setState(() => {
+      return {
+        data: result,
+        reset: false
+      };
     });
   }
 
@@ -1018,6 +1234,7 @@ class BootstrapTable extends Component {
             sizePerPageDropDown={ options.sizePerPageDropDown }
             hidePageListOnlyOnePage={ options.hidePageListOnlyOnePage }
             paginationPanel={ options.paginationPanel }
+            keepSizePerPageState={ options.keepSizePerPageState }
             open={ false }/>
         </div>
       );
@@ -1040,7 +1257,8 @@ class BootstrapTable extends Component {
       || this.props.options.toolBar) {
       let columns;
       if (Array.isArray(children)) {
-        columns = children.map((column, r) => {
+        columns = children.filter(_ => _ != null).map((column, r) => {
+          if (!column) return;
           const { props } = column;
           const isKey = props.isKey || keyField === props.dataField;
           return {
@@ -1053,7 +1271,7 @@ class BootstrapTable extends Component {
             // when you want same auto generate value and not allow edit, example ID field
             autoValue: props.autoValue || false,
             // for create editor, no params for column.editable() indicate that editor for new row
-            editable: props.editable && (typeof props.editable === 'function') ? props.editable() : props.editable,
+            editable: props.editable && (Util.isFunction(props.editable === 'function')) ? props.editable() : props.editable,
             format: props.dataFormat ? function(value) {
               return props.dataFormat(value, null, props.formatExtraData, r).replace(/<.*?>/g, '');
             } : false
@@ -1073,6 +1291,7 @@ class BootstrapTable extends Component {
         <div className={ `react-bs-table-tool-bar ${ print ? '' : 'hidden-print' }` }>
           <ToolBar
             ref='toolbar'
+            version={ this.props.version }
             defaultSearch={ this.props.options.defaultSearch }
             clearSearch={ this.props.options.clearSearch }
             searchPosition={ this.props.options.searchPosition }
@@ -1109,7 +1328,8 @@ class BootstrapTable extends Component {
             btnGroup={ this.props.options.btnGroup }
             toolBar={ this.props.options.toolBar }
             reset={ this.state.reset }
-            isValidKey={ this.store.isValidKey } />
+            isValidKey={ this.store.isValidKey }
+            insertFailIndicator={ this.props.options.insertFailIndicator || Const.INSERT_FAIL_INDICATOR } />
         </div>
       );
     } else {
@@ -1191,12 +1411,19 @@ class BootstrapTable extends Component {
         }
       }
     } else {
-      React.Children.forEach(this.props.children, (child, i) => {
-        if (child.props.width) {
-          header[i].style.width = `${child.props.width}px`;
-          header[i].style.minWidth = `${child.props.width}px`;
+      for (const i in bodyHeader) {
+        if (bodyHeader.hasOwnProperty(i)) {
+          const child = bodyHeader[i];
+          if (child.style) {
+            if (child.style.width) {
+              header[i].style.width = child.style.width;
+            }
+            if (child.style.minWidth) {
+              header[i].style.minWidth = child.style.minWidth;
+            }
+          }
         }
-      });
+      }
     }
     this.isVerticalScroll = isScroll;
   }
@@ -1229,25 +1456,31 @@ class BootstrapTable extends Component {
       if (atTheBeginning) {
         const { pageStartIndex } = this.props.options;
         result = this.store.page(Util.getNormalizedPage(pageStartIndex), sizePerPage).get();
-        this.setState({
-          data: result,
-          currPage: Util.getFirstPage(pageStartIndex),
-          reset: false
+        this.setState(() => {
+          return {
+            data: result,
+            currPage: Util.getFirstPage(pageStartIndex),
+            reset: false
+          };
         });
       } else {
         const currLastPage = Math.ceil(this.store.getDataNum() / sizePerPage);
         result = this.store.page(currLastPage, sizePerPage).get();
-        this.setState({
-          data: result,
-          currPage: currLastPage,
-          reset: false
+        this.setState(() => {
+          return {
+            data: result,
+            currPage: currLastPage,
+            reset: false
+          };
         });
       }
     } else {
       result = this.store.get();
-      this.setState({
-        data: result,
-        reset: false
+      this.setState(() => {
+        return {
+          data: result,
+          reset: false
+        };
       });
     }
 
@@ -1262,7 +1495,9 @@ BootstrapTable.propTypes = {
   height: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
   maxHeight: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
   data: PropTypes.oneOfType([ PropTypes.array, PropTypes.object ]),
+  version: PropTypes.string,  // bootstrap version
   remote: PropTypes.oneOfType([ PropTypes.bool, PropTypes.func ]), // remote data, default is false
+  replace: PropTypes.oneOfType([ PropTypes.bool, PropTypes.func ]),
   scrollTop: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
   striped: PropTypes.bool,
   bordered: PropTypes.bool,
@@ -1270,6 +1505,7 @@ BootstrapTable.propTypes = {
   condensed: PropTypes.bool,
   pagination: PropTypes.bool,
   printable: PropTypes.bool,
+  withoutTabIndex: PropTypes.bool,
   keyBoardNav: PropTypes.oneOfType([ PropTypes.bool, PropTypes.object ]),
   searchPlaceholder: PropTypes.string,
   selectRow: PropTypes.shape({
@@ -1289,7 +1525,8 @@ BootstrapTable.propTypes = {
     clickToExpand: PropTypes.bool,
     showOnlySelected: PropTypes.bool,
     unselectable: PropTypes.array,
-    columnWidth: PropTypes.oneOfType([ PropTypes.number, PropTypes.string ])
+    columnWidth: PropTypes.oneOfType([ PropTypes.number, PropTypes.string ]),
+    onlyUnselectVisible: PropTypes.bool
   }),
   cellEdit: PropTypes.shape({
     mode: PropTypes.string,
@@ -1305,6 +1542,7 @@ BootstrapTable.propTypes = {
   strictSearch: PropTypes.bool,
   columnFilter: PropTypes.bool,
   trClassName: PropTypes.any,
+  trStyle: PropTypes.any,
   tableStyle: PropTypes.object,
   containerStyle: PropTypes.object,
   headerStyle: PropTypes.object,
@@ -1340,31 +1578,39 @@ BootstrapTable.propTypes = {
       Const.PAGINATION_POS_BOTTOM,
       Const.PAGINATION_POS_BOTH
     ]),
+    toolbarPosition: PropTypes.oneOf([
+      Const.TOOLBAR_POS_TOP,
+      Const.TOOLBAR_POS_BOTTOM,
+      Const.TOOLBAR_POS_BOTH
+    ]),
     hideSizePerPage: PropTypes.bool,
     hidePageListOnlyOnePage: PropTypes.bool,
     alwaysShowAllBtns: PropTypes.bool,
     withFirstAndLast: PropTypes.bool,
+    keepSizePerPageState: PropTypes.bool,
     onSortChange: PropTypes.func,
     onPageChange: PropTypes.func,
     onSizePerPageList: PropTypes.func,
-    onFilterChange: React.PropTypes.func,
-    onSearchChange: React.PropTypes.func,
-    onAddRow: React.PropTypes.func,
-    onExportToCSV: React.PropTypes.func,
-    onCellEdit: React.PropTypes.func,
+    onFilterChange: PropTypes.func,
+    onSearchChange: PropTypes.func,
+    onAddRow: PropTypes.func,
+    onExportToCSV: PropTypes.func,
+    onCellEdit: PropTypes.func,
     noDataText: PropTypes.oneOfType([ PropTypes.string, PropTypes.object ]),
-    withoutNoDataText: React.PropTypes.bool,
+    withoutNoDataText: PropTypes.bool,
     handleConfirmDeleteRow: PropTypes.func,
-    prePage: PropTypes.string,
-    nextPage: PropTypes.string,
-    firstPage: PropTypes.string,
-    lastPage: PropTypes.string,
+    prePage: PropTypes.any,
+    nextPage: PropTypes.any,
+    firstPage: PropTypes.any,
+    lastPage: PropTypes.any,
     prePageTitle: PropTypes.string,
     nextPageTitle: PropTypes.string,
     firstPageTitle: PropTypes.string,
     lastPageTitle: PropTypes.string,
     searchDelayTime: PropTypes.number,
+    excludeCSVHeader: PropTypes.bool,
     exportCSVText: PropTypes.string,
+    exportCSVSeparator: PropTypes.string,
     insertText: PropTypes.string,
     deleteText: PropTypes.string,
     saveText: PropTypes.string,
@@ -1390,9 +1636,14 @@ BootstrapTable.propTypes = {
     expandRowBgColor: PropTypes.string,
     expandBy: PropTypes.string,
     expanding: PropTypes.array,
+    onExpand: PropTypes.func,
     onlyOneExpanding: PropTypes.bool,
+    expandBodyClass: PropTypes.oneOfType([ PropTypes.string, PropTypes.func ]),
+    expandParentClass: PropTypes.oneOfType([ PropTypes.string, PropTypes.func ]),
     beforeShowError: PropTypes.func,
-    printToolBar: PropTypes.bool
+    printToolBar: PropTypes.bool,
+    insertFailIndicator: PropTypes.string,
+    noAutoBOM: PropTypes.bool
   }),
   fetchInfo: PropTypes.shape({
     dataTotalSize: PropTypes.number
@@ -1402,6 +1653,11 @@ BootstrapTable.propTypes = {
   ignoreSinglePage: PropTypes.bool,
   expandableRow: PropTypes.func,
   expandComponent: PropTypes.func,
+  autoCollapse: PropTypes.shape({
+    sort: PropTypes.bool,
+    filter: PropTypes.bool,
+    search: PropTypes.bool
+  }),
   expandColumnOptions: PropTypes.shape({
     columnWidth: PropTypes.oneOfType([ PropTypes.number, PropTypes.string ]),
     expandColumnVisible: PropTypes.bool,
@@ -1410,6 +1666,8 @@ BootstrapTable.propTypes = {
   })
 };
 BootstrapTable.defaultProps = {
+  version: '3',
+  replace: false,
   scrollTop: undefined,
   expandComponent: undefined,
   expandableRow: undefined,
@@ -1426,6 +1684,7 @@ BootstrapTable.defaultProps = {
   condensed: false,
   pagination: false,
   printable: false,
+  withoutTabIndex: false,
   keyBoardNav: false,
   searchPlaceholder: undefined,
   selectRow: {
@@ -1440,7 +1699,8 @@ BootstrapTable.defaultProps = {
     clickToExpand: false,
     showOnlySelected: false,
     unselectable: [],
-    customComponent: undefined
+    customComponent: undefined,
+    onlyUnselectVisible: false
   },
   cellEdit: {
     mode: Const.CELL_EDIT_NONE,
@@ -1457,6 +1717,7 @@ BootstrapTable.defaultProps = {
   multiColumnSort: 1,
   columnFilter: false,
   trClassName: '',
+  trStyle: undefined,
   tableStyle: undefined,
   containerStyle: undefined,
   headerStyle: undefined,
@@ -1491,10 +1752,12 @@ BootstrapTable.defaultProps = {
     sizePerPage: undefined,
     paginationSize: Const.PAGINATION_SIZE,
     paginationPosition: Const.PAGINATION_POS_BOTTOM,
+    toolbarPosition: Const.TOOLBAR_POS_TOP,
     hideSizePerPage: false,
     hidePageListOnlyOnePage: false,
     alwaysShowAllBtns: false,
     withFirstAndLast: true,
+    keepSizePerPageState: false,
     onSizePerPageList: undefined,
     noDataText: undefined,
     withoutNoDataText: false,
@@ -1509,7 +1772,9 @@ BootstrapTable.defaultProps = {
     lastPageTitle: Const.LAST_PAGE_TITLE,
     pageStartIndex: 1,
     searchDelayTime: undefined,
+    excludeCSVHeader: false,
     exportCSVText: Const.EXPORT_CSV_TEXT,
+    exportCSVSeparator: Const.DEFAULT_CSV_SEPARATOR,
     insertText: Const.INSERT_BTN_TEXT,
     deleteText: Const.DELETE_BTN_TEXT,
     saveText: Const.SAVE_BTN_TEXT,
@@ -1535,16 +1800,26 @@ BootstrapTable.defaultProps = {
     expandRowBgColor: undefined,
     expandBy: Const.EXPAND_BY_ROW,
     expanding: [],
+    onExpand: undefined,
     onlyOneExpanding: false,
+    expandBodyClass: null,
+    expandParentClass: null,
     beforeShowError: undefined,
-    printToolBar: true
+    printToolBar: true,
+    insertFailIndicator: Const.INSERT_FAIL_INDICATOR,
+    noAutoBOM: true
   },
   fetchInfo: {
     dataTotalSize: 0
   },
   exportCSV: false,
   csvFileName: 'spreadsheet.csv',
-  ignoreSinglePage: false
+  ignoreSinglePage: false,
+  autoCollapse: {
+    sort: Const.AUTO_COLLAPSE_WHEN_SORT,
+    filter: Const.AUTO_COLLAPSE_WHEN_FILTER,
+    search: Const.AUTO_COLLAPSE_WHEN_SEARCH
+  }
 };
 
 export default BootstrapTable;

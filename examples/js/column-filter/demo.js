@@ -4,6 +4,7 @@ import TextFilter from './text-filter';
 import TextFilterWithDefaultValue from './text-filter-with-default-value';
 import TextFilterWithCondition from './text-filter-with-eq-condition';
 import ProgrammaticallyTextFilter from './text-filter-programmatically';
+import FilterStyle from './filter-style';
 import RegexFilter from './regex-filter';
 import ProgrammaticallyRegexFilter from './regex-filter-programmatically';
 import SelectFilter from './select-filter';
@@ -12,17 +13,20 @@ import SelectFilterWithCustomText from './select-filter-with-select-text';
 import SelectFilterWithDefaultValue from './select-filter-with-default-value';
 import ProgrammaticallySelectFilter from './select-filter-programmatically';
 import SelectFilterWithSort from './select-filter-with-sort';
+import SelectFilterWithoutEmptyOption from './select-filter-without-empty-option';
 import NumberFilter from './number-filter';
 import NumberFilterWithDefaultValue from './number-filter-with-default-value';
 import ProgrammaticallyNumberFilter from './number-filter-programmatically';
 import NumberOptionsFilter from './number-options-filter';
 import NumberOptionsFilterWithDefaultValue from './number-options-filter-with-default-value';
+import NumberFilterWithoutEmptyOption from './number-filter-without-empty-option';
 import DateFilter from './date-filter';
 import DateFilterWithDefaultValue from './date-filter-with-default-value';
 import ProgrammaticallyDateFilter from './date-filter-programmatically';
 import CustomFilter from './custom-filter';
 import AllFilter from './all-filters';
 import FloatFilter from './float-filter';
+import ArrayFilter from './array-filter-programmatically';
 
 class Demo extends React.Component {
   render() {
@@ -146,6 +150,15 @@ class Demo extends React.Component {
             </div>
             <div className='col-md-offset-1 col-md-8'>
                 <div className='panel panel-default'>
+                    <div className='panel-heading'>Select Filter Without Empty Option Example</div>
+                    <div className='panel-body'>
+                        <h5>Source in /examples/js/column-filter/select-filter-without-empty-option.js</h5>
+                        <SelectFilterWithoutEmptyOption />
+                    </div>
+                </div>
+            </div>
+            <div className='col-md-offset-1 col-md-8'>
+                <div className='panel panel-default'>
                     <div className='panel-heading'>Number Filter Example</div>
                     <div className='panel-body'>
                         <h5>Source in /examples/js/column-filter/number-filter.js</h5>
@@ -200,6 +213,15 @@ class Demo extends React.Component {
             </div>
             <div className='col-md-offset-1 col-md-8'>
                 <div className='panel panel-default'>
+                    <div className='panel-heading'>Number Filter Without Empty Option Example</div>
+                    <div className='panel-body'>
+                        <h5>Source in /examples/js/column-filter/number-filter-without-empty-option.js</h5>
+                        <NumberFilterWithoutEmptyOption />
+                    </div>
+                </div>
+            </div>
+            <div className='col-md-offset-1 col-md-8'>
+                <div className='panel panel-default'>
                     <div className='panel-heading'>Date Filter Example</div>
                     <div className='panel-body'>
                         <h5>Source in /examples/js/column-filter/date-filter.js</h5>
@@ -242,6 +264,24 @@ class Demo extends React.Component {
                         <h5>This example also show you how to clean filter programmatic :</h5>
                         <h5>You can call <code>cleanFiltered</code> which exposed by <code>TableHeaderColumn</code></h5>
                         <AllFilter />
+                    </div>
+                </div>
+            </div>
+            <div className='col-md-offset-1 col-md-8'>
+                <div className='panel panel-default'>
+                    <div className='panel-heading'>Filter Style</div>
+                    <div className='panel-body'>
+                        <h5>Source in /examples/js/column-filter/filter-style.js</h5>
+                        <FilterStyle />
+                    </div>
+                </div>
+            </div>
+            <div className='col-md-offset-1 col-md-8'>
+                <div className='panel panel-default'>
+                    <div className='panel-heading'>Set Array Filter Programmatically</div>
+                    <div className='panel-body'>
+                        <h5>Source in /examples/js/column-filter/array-filter-programmatically.js</h5>
+                        <ArrayFilter />
                     </div>
                 </div>
             </div>
