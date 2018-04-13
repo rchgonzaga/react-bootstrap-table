@@ -52,13 +52,13 @@ class BSTable extends React.Component {
   }
 }
 
-export default class ExpandRow extends React.Component {
+export default class HideRowWhenExpanding extends React.Component {
   constructor(props) {
     super(props);
   }
 
   isExpandableRow(row) {
-    if (row.id < 3) return true;
+    if (row.id < 4) return true;
     else return false;
   }
 
@@ -70,15 +70,13 @@ export default class ExpandRow extends React.Component {
 
   render() {
     const options = {
-      expandRowBgColor: 'rgb(242, 255, 163)',
-      expandAll: true
+      hideRowOnExpand: true
     };
     return (
       <BootstrapTable data={ products }
         options={ options }
         expandableRow={ this.isExpandableRow }
         expandComponent={ this.expandComponent }
-        expandColumnOptions={ { expandColumnVisible: true } }
         search>
         <TableHeaderColumn dataField='id' isKey={ true }>Product ID</TableHeaderColumn>
         <TableHeaderColumn dataField='name'>Product Name</TableHeaderColumn>

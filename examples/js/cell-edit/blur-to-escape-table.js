@@ -1,6 +1,4 @@
 /* eslint max-len: 0 */
-/* eslint no-alert: 0 */
-/* eslint no-console: 0 */
 import React from 'react';
 import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
 
@@ -19,23 +17,17 @@ function addProducts(quantity) {
   }
 }
 
-addProducts(50);
+addProducts(5);
 
-const options = {
-  onRowClick: function(row, columnIndex, rowIndex, e) {
-    alert(`You click row id: ${row.id}, column index: ${columnIndex}, row index: ${rowIndex}`);
-    console.log(e);
-  },
-  onRowDoubleClick: function(row, e) {
-    alert(`You double click row id: ${row.id}`);
-    console.log(e);
-  }
+const cellEditProp = {
+  mode: 'click',
+  blurToEscape: true
 };
 
-export default class SingleSelectTable extends React.Component {
+export default class BlurToEscapeTable extends React.Component {
   render() {
     return (
-      <BootstrapTable data={ products } options={ options } pagination>
+      <BootstrapTable data={ products } cellEdit={ cellEditProp }>
           <TableHeaderColumn dataField='id' isKey={ true }>Product ID</TableHeaderColumn>
           <TableHeaderColumn dataField='name'>Product Name</TableHeaderColumn>
           <TableHeaderColumn dataField='price'>Product Price</TableHeaderColumn>

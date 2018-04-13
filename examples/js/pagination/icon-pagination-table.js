@@ -1,6 +1,4 @@
 /* eslint max-len: 0 */
-/* eslint no-alert: 0 */
-/* eslint no-console: 0 */
 import React from 'react';
 import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
 
@@ -19,27 +17,32 @@ function addProducts(quantity) {
   }
 }
 
-addProducts(50);
+addProducts(70);
 
-const options = {
-  onRowClick: function(row, columnIndex, rowIndex, e) {
-    alert(`You click row id: ${row.id}, column index: ${columnIndex}, row index: ${rowIndex}`);
-    console.log(e);
-  },
-  onRowDoubleClick: function(row, e) {
-    alert(`You double click row id: ${row.id}`);
-    console.log(e);
+export default class IconPaginationTable extends React.Component {
+  constructor(props) {
+    super(props);
   }
-};
 
-export default class SingleSelectTable extends React.Component {
   render() {
+    const tableOptions = {
+      prePage: <i className='glyphicon glyphicon-chevron-left' />,
+      nextPage: <i className='glyphicon glyphicon-chevron-right' />,
+      firstPage: <i className='glyphicon glyphicon-step-backward' />,
+      lastPage: <i className='glyphicon glyphicon-step-forward' />
+    };
+
     return (
-      <BootstrapTable data={ products } options={ options } pagination>
+      <div>
+        <BootstrapTable
+          data={ products }
+          options={ tableOptions }
+          pagination>
           <TableHeaderColumn dataField='id' isKey={ true }>Product ID</TableHeaderColumn>
           <TableHeaderColumn dataField='name'>Product Name</TableHeaderColumn>
           <TableHeaderColumn dataField='price'>Product Price</TableHeaderColumn>
-      </BootstrapTable>
+        </BootstrapTable>
+      </div>
     );
   }
 }

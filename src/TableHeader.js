@@ -5,6 +5,7 @@ import Const from './Const';
 import classSet from 'classnames';
 import SelectRowHeaderColumn from './SelectRowHeaderColumn';
 import ExpandRowHeaderColumn from './ExpandRowHeaderColumn';
+import Utils from './util';
 
 class Checkbox extends Component {
   componentDidMount() { this.update(this.props.checked); }
@@ -15,9 +16,9 @@ class Checkbox extends Component {
   render() {
     return (
       <input className='react-bs-select-all'
-             type='checkbox'
-             checked={ this.props.checked }
-             onChange={ this.props.onChange } />
+        type='checkbox'
+        checked={ this.props.checked }
+        onChange={ this.props.onChange } />
     );
   }
 }
@@ -37,14 +38,22 @@ function getSortOrder(sortList, field, enableSort) {
 class TableHeader extends Component {
 
   render() {
+    const { sortIndicator, sortList, onSort, reset, version, condensed, bordered,
+      expandedColumnHeaderComponent, noAnyExpand, toggleExpandAllChilds, expandAll
+    } = this.props;
     const containerClasses = classSet(
       'react-bs-container-header',
       'table-header-wrapper',
       this.props.headerContainerClass);
-    const tableClasses = classSet('table', 'table-hover', {
-      'table-bordered': this.props.bordered,
-      'table-condensed': this.props.condensed
-    }, this.props.tableHeaderClass);
+    const customTableClasses = {
+      'table-bordered': bordered
+    };
+    if (condensed) {
+      if (Utils.isBootstrap4(version)) customTableClasses['table-sm'] = true;
+      else customTableClasses['table-condensed'] = true;
+    }
+    const tableClasses = classSet(
+      'table', 'table-hover', customTableClasses, this.props.tableHeaderClass);
 
     const rowCount = Math.max(...React.Children.map(this.props.children, elm =>
       (elm && elm.props.row) ? Number(elm.props.row) : 0
@@ -57,15 +66,22 @@ class TableHeader extends Component {
     rows[0].push( [
       this.props.expandColumnVisible &&
         this.props.expandColumnBeforeSelectColumn &&
-          <ExpandRowHeaderColumn rowCount={ rowCount + 1 }/>
+          <ExpandRowHeaderColumn key='expandCol' rowCount={ rowCount + 1 }
+            expandedColumnHeaderComponent={ expandedColumnHeaderComponent }
+            noAnyExpand={ noAnyExpand }
+            expandAll={ expandAll }
+            toggleExpandAllChilds={ toggleExpandAllChilds }/>
     ], [
       this.renderSelectRowHeader(rowCount + 1, rowKey++)
     ], [
       this.props.expandColumnVisible &&
         !this.props.expandColumnBeforeSelectColumn &&
-          <ExpandRowHeaderColumn rowCount={ rowCount + 1 }/>
+          <ExpandRowHeaderColumn key='expandCol' rowCount={ rowCount + 1 }
+            expandedColumnHeaderComponent={ expandedColumnHeaderComponent }
+            noAnyExpand={ noAnyExpand }
+            expandAll={ expandAll }
+            toggleExpandAllChilds={ toggleExpandAllChilds }/>
     ]);
-    const { sortIndicator, sortList, onSort, reset, version } = this.props;
 
     React.Children.forEach(this.props.children, (elm) => {
       if (elm === null || elm === undefined) {
@@ -99,11 +115,14 @@ class TableHeader extends Component {
     });
 
     return (
-      <div ref='container' className={ containerClasses } style={ this.props.style }>
+      <div
+        ref={ node => this.container = node }
+        className={ containerClasses }
+        style={ this.props.style }>
         <table className={ tableClasses }>
-          { React.cloneElement(this.props.colGroups, { ref: 'headerGrp' }) }
-          <thead ref='header'>
-          { trs }
+          { React.cloneElement(this.props.colGroups, { ref: node => this.headerGrp = node }) }
+          <thead ref={ node => this.header = node }>
+            { trs }
           </thead>
         </table>
       </div>
@@ -111,7 +130,7 @@ class TableHeader extends Component {
   }
 
   getHeaderColGrouop = () => {
-    return this.refs.headerGrp.childNodes;
+    return this.headerGrp.childNodes;
   }
 
   renderSelectRowHeader(rowCount, rowKey) {
@@ -122,8 +141,8 @@ class TableHeader extends Component {
       return (
         <SelectRowHeaderColumn key={ rowKey } rowCount={ rowCount }>
           <CustomComponent type='checkbox' checked={ this.props.isSelectAll }
-                           indeterminate={ this.props.isSelectAll === 'indeterminate' } disabled={ false }
-                           onChange={ this.props.onSelectAllRow } rowIndex='Header'/>
+            indeterminate={ this.props.isSelectAll === 'indeterminate' } disabled={ false }
+            onChange={ this.props.onSelectAllRow } rowIndex='Header'/>
         </SelectRowHeaderColumn>
       );
     } else if (this.props.rowSelectType === Const.ROW_SELECT_SINGLE) {
@@ -160,8 +179,12 @@ TableHeader.propTypes = {
   reset: PropTypes.bool,
   expandColumnVisible: PropTypes.bool,
   expandColumnComponent: PropTypes.func,
+  expandedColumnHeaderComponent: PropTypes.func,
   expandColumnBeforeSelectColumn: PropTypes.bool,
-  version: PropTypes.string
+  version: PropTypes.string,
+  noAnyExpand: PropTypes.bool,
+  expandAll: PropTypes.bool,
+  toggleExpandAllChilds: PropTypes.func
 };
 
 export default TableHeader;

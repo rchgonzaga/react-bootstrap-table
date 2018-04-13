@@ -424,8 +424,8 @@ export class TableDataStore {
     return this.filterText(targetVal, filterVal, cond);
   }
 
-  filterText(targetVal, filterVal, cond = Const.FILTER_COND_LIKE) {
-    targetVal = targetVal.toString();
+  filterText(targetVal = '', filterVal, cond = Const.FILTER_COND_LIKE) {
+    targetVal = targetVal === null ? '' : targetVal.toString();
     filterVal = filterVal.toString();
     if (cond === Const.FILTER_COND_EQ) {
       return targetVal === filterVal;
@@ -658,8 +658,9 @@ export class TableDataStore {
         if (sortFunc) {
           result = sortFunc(a, b, sortDetails.order, sortDetails.sortField, sortFuncExtraData);
         } else {
-          const valueA = a[sortDetails.sortField] === null ? '' : a[sortDetails.sortField];
-          const valueB = b[sortDetails.sortField] === null ? '' : b[sortDetails.sortField];
+          const valueA = a[sortDetails.sortField] == null ? '' : a[sortDetails.sortField];
+          const valueB = b[sortDetails.sortField] == null ? '' : b[sortDetails.sortField];
+
           if (isDesc) {
             if (typeof valueB === 'string') {
               result = valueB.localeCompare(valueA);

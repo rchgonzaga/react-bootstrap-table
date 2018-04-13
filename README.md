@@ -1,7 +1,6 @@
 # react-bootstrap-table
 
-### react-bootstrap-table will stop develop new feature and move to [react-bootstrap-table2](https://github.com/react-bootstrap-table/react-bootstrap-table2), but keep to fix critical bugs.
-### Feel free to let me know your idea on [here](https://github.com/react-bootstrap-table/react-bootstrap-table2/issues)
+## [`react-bootstrap-table2`](https://github.com/react-bootstrap-table/react-bootstrap-table2) already released, this project will stop development after 2018Q2
 
 [![Join the chat at https://gitter.im/AllenFang/react-bootstrap-table](https://badges.gitter.im/AllenFang/react-bootstrap-table.svg)](https://gitter.im/AllenFang/react-bootstrap-table?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -102,6 +101,8 @@ The UMD build is also available on [npmcdn](https://npmcdn.com):
 ### c.Import CSS
 Finally, you need to import the css file to your app:
 ```html
+<!-- we still need bootstrap css -->
+<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
 <link rel="stylesheet" href="./dist/react-bootstrap-table.min.css">
 ```
 The CSS files you can find in the css folder.

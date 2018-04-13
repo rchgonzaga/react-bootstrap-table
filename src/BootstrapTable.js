@@ -7,6 +7,7 @@ import Alert from 'react-s-alert';
 import Const from './Const';
 import TableHeaderColumn from './TableHeaderColumn';
 import TableHeader from './TableHeader';
+import TableFooter from './TableFooter';
 import TableBody from './TableBody';
 import PaginationList from './pagination/PaginationList';
 import ToolBar from './toolbar/ToolBar';
@@ -43,11 +44,20 @@ class BootstrapTable extends Component {
     this._adjustHeaderWidth = this._adjustHeaderWidth.bind(this);
     this._adjustHeight = this._adjustHeight.bind(this);
     this._adjustTable = this._adjustTable.bind(this);
+    this.toggleExpandAllChilds = this.toggleExpandAllChilds.bind(this);
+
+    let expandedKeys = [];
+    if (this.props.options.expandAllChilds !== null &&
+      this.props.options.expandAllChilds !== undefined && this.props.options.expandAllChilds) {
+      expandedKeys = this.store.getAllRowkey();
+    } else if (this.props.options.expanding !== undefined && this.props.options.expanding !== null) {
+      expandedKeys = this.props.options.expanding;
+    }
 
     this.state = {
       data: this.getTableData(),
       currPage: currPage,
-      expanding: this.props.options.expanding || [],
+      expanding: expandedKeys,
       sizePerPage: this.props.options.sizePerPage || Const.SIZE_PER_PAGE_LIST[0],
       selectedRowKeys: this.store.getSelectedRowKeys(),
       reset: false,
@@ -62,7 +72,7 @@ class BootstrapTable extends Component {
       const nextDataFields = React.Children.map(props.children, column => column.props.dataField);
       React.Children.forEach(this.props.children, column => {
         const { dataField, filter } = column.props;
-        if (!nextDataFields.includes(dataField)) {
+        if (filter && !nextDataFields.includes(dataField)) {
           // Clear filter
           this.filter.handleFilter(dataField, '', filter.type, filter);
         }
@@ -229,7 +239,7 @@ class BootstrapTable extends Component {
   reset() {
     const { pageStartIndex } = this.props.options;
     this.store.clean();
-    this.refs.body.setState({ currEditCell: null });
+    this.body.setState({ currEditCell: null });
     this.setState(() => {
       return {
         data: this.getTableData(),
@@ -277,6 +287,16 @@ class BootstrapTable extends Component {
           if (this.store.filterObj) this.handleFilterData(this.store.filterObj);
           newState.currPage = Util.getFirstPage(nextProps.options.pageStartIndex);
         } else {
+          if (!this.allowRemote(Const.REMOTE_SORT)) {
+            data = this.store.sort().get();
+          } else {
+            const { options: currentOptions } = this.props;
+            const sortName = options.sortName;
+            const sortOrder = options.sortOrder;
+            if (currentOptions.sortName !== sortName || currentOptions.sortOrder !== sortOrder) {
+              this.store.setSortInfo(sortOrder, options.sortName);
+            }
+          }
           newState.data = data;
         }
         this.setState(() => newState);
@@ -343,7 +363,10 @@ class BootstrapTable extends Component {
   componentDidMount() {
     this._adjustTable();
     window.addEventListener('resize', this._adjustTable);
-    this.refs.body.refs.container.addEventListener('scroll', this._scrollHeader);
+    this.body.container.addEventListener('scroll', this._scrollHeader);
+    if (this.props.footer) {
+      this.body.container.addEventListener('scroll', this._scrollFooter);
+    }
     if (this.props.scrollTop) {
       this._scrollTop();
     }
@@ -351,8 +374,11 @@ class BootstrapTable extends Component {
 
   componentWillUnmount() {
     window.removeEventListener('resize', this._adjustTable);
-    if (this.refs && this.refs.body && this.refs.body.refs) {
-      this.refs.body.refs.container.removeEventListener('scroll', this._scrollHeader);
+    if (this.body && this.body.container) {
+      this.body.container.removeEventListener('scroll', this._scrollHeader);
+      if (this.props.footer) {
+        this.body.container.removeEventListener('scroll', this._scrollFooter);
+      }
     }
     if (this.filter) {
       this.filter.removeAllListeners('onFilterChange');
@@ -413,6 +439,7 @@ class BootstrapTable extends Component {
       expandColumnOptions.expandColumnBeforeSelectColumn = true;
     }
     const colGroups = Util.renderColGroup(columns, this.props.selectRow, expandColumnOptions, this.props.version);
+    const tableFooter = this.renderTableFooter(this.props.footerData, this.state.data, columns, colGroups);
     let sortIndicator = this.props.options.sortIndicator;
     if (typeof this.props.options.sortIndicator === 'undefined') sortIndicator = true;
 
@@ -427,19 +454,19 @@ class BootstrapTable extends Component {
     const { toolbarPosition = Const.TOOLBAR_POS_TOP } = this.props.options;
     const showToolbarOnTop = toolbarPosition !== Const.TOOLBAR_POS_BOTTOM;
     const showToolbarOnBottom = toolbarPosition !== Const.TOOLBAR_POS_TOP;
-
+    const { hideRowOnExpand = false } = this.props.options;
     return (
       <div className={ classSet('react-bs-table-container', this.props.className, this.props.containerClass) }
         style={ this.props.containerStyle }>
         { showToolbarOnTop ? toolBar : null }
         { showPaginationOnTop ? pagination : null }
-        <div ref='table'
+        <div ref={ node => this.table = node }
             className={ classSet('react-bs-table', { 'react-bs-table-bordered': this.props.bordered }, this.props.tableContainerClass) }
             style={ { ...style, ...this.props.tableStyle } }
             onMouseEnter={ this.handleMouseEnter }
             onMouseLeave={ this.handleMouseLeave }>
           <TableHeader
-            ref='header'
+            ref={ node => this.header = node }
             version={ this.props.version }
             colGroups={ colGroups }
             headerContainerClass={ this.props.headerContainerClass }
@@ -461,10 +488,15 @@ class BootstrapTable extends Component {
             reset={ this.state.reset }
             expandColumnVisible={ expandColumnOptions.expandColumnVisible }
             expandColumnComponent={ expandColumnOptions.expandColumnComponent }
+            expandedColumnHeaderComponent={ expandColumnOptions.expandedColumnHeaderComponent }
+            noAnyExpand={ this.state.expanding.length === 0 }
+            expandAll={ this.props.options.expandAll }
+            toggleExpandAllChilds={ this.toggleExpandAllChilds }
             expandColumnBeforeSelectColumn={ expandColumnOptions.expandColumnBeforeSelectColumn }>
             { this.props.children }
           </TableHeader>
-          <TableBody ref='body'
+          <TableBody
+          ref={ node => this.body = node }
             bodyContainerClass={ this.props.bodyContainerClass }
             tableBodyClass={ this.props.tableBodyClass }
             style={ { ...style, ...this.props.bodyStyle } }
@@ -504,13 +536,17 @@ class BootstrapTable extends Component {
             x={ this.state.x }
             y={ this.state.y }
             withoutTabIndex={ this.props.withoutTabIndex }
+            hideRowOnExpand={ hideRowOnExpand }
             onEditCell={ this.handleEditCell } />
+            {
+              tableFooter
+            }
         </div>
         { tableFilter }
         { showPaginationOnBottom ? pagination : null }
 
         { showToolbarOnBottom ? toolBar : null }
-        <Alert stack={ { limit: 3 } } />
+        { this.props.renderAlert ? <Alert stack={ { limit: 3 } } /> : null }
       </div>
     );
   }
@@ -597,14 +633,33 @@ class BootstrapTable extends Component {
     });
   }
 
-  handleExpandRow = (expanding, rowKey, isRowExpanding) => {
+  handleExpandRow = (expanding, rowKey, isRowExpanding, event) => {
     const { onExpand } = this.props.options;
     if (onExpand) {
-      onExpand(rowKey, !isRowExpanding);
+      onExpand(rowKey, !isRowExpanding, event);
     }
     this.setState(() => { return { expanding, reset: false }; }, () => {
       this._adjustHeaderWidth();
     });
+  }
+
+  toggleExpandAllChilds() {
+    const { expanding } = this.state;
+    if (expanding.length > 0) {
+      this.setState(() => {
+        return {
+          expanding: [],
+          reset: false
+        };
+      });
+    } else {
+      this.setState(() => {
+        return {
+          expanding: this.store.getAllRowkey(),
+          reset: false
+        };
+      });
+    }
   }
 
   handlePaginationData = (page, sizePerPage) => {
@@ -665,7 +720,7 @@ class BootstrapTable extends Component {
 
     if (y >= visibleRowSize) {
       currPage++;
-      const lastPage = pagination ? this.refs.pagination.getLastPage() : -1;
+      const lastPage = pagination ? this.pagination.getLastPage() : -1;
       if (currPage <= lastPage) {
         this.handlePaginationData(currPage, this.state.sizePerPage);
       } else {
@@ -683,7 +738,7 @@ class BootstrapTable extends Component {
     } else if (x >= visibleColumnSize) {
       if ((y + 1) === visibleRowSize) {
         currPage++;
-        const lastPage = pagination ? this.refs.pagination.getLastPage() : -1;
+        const lastPage = pagination ? this.pagination.getLastPage() : -1;
         if (currPage <= lastPage) {
           this.handlePaginationData(currPage, this.state.sizePerPage);
         } else {
@@ -715,10 +770,10 @@ class BootstrapTable extends Component {
     });
   }
 
-  handleRowClick = (row, rowIndex, columnIndex) => {
+  handleRowClick = (row, rowIndex, columnIndex, event) => {
     const { options, keyBoardNav } = this.props;
     if (options.onRowClick) {
-      options.onRowClick(row, columnIndex, rowIndex);
+      options.onRowClick(row, columnIndex, rowIndex, event);
     }
     if (keyBoardNav) {
       let { clickToNav } = typeof keyBoardNav === 'object' ? keyBoardNav : {};
@@ -735,9 +790,9 @@ class BootstrapTable extends Component {
     }
   }
 
-  handleRowDoubleClick = row => {
+  handleRowDoubleClick = (row, event) => {
     if (this.props.options.onRowDoubleClick) {
-      this.props.options.onRowDoubleClick(row);
+      this.props.options.onRowDoubleClick(row, event);
     }
   }
 
@@ -861,14 +916,15 @@ class BootstrapTable extends Component {
 
     if (beforeSaveCell) {
       const beforeSaveCellCB = result => {
-        this.refs.body.cancelEditCell();
+        this.body.cancelEditCell();
         if (result || result === undefined) {
           this.editCell(newVal, rowIndex, colIndex);
         } else {
           invalid();
         }
       };
-      const isValid = beforeSaveCell(this.state.data[rowIndex], fieldName, newVal, beforeSaveCellCB);
+      const props = { rowIndex, colIndex };
+      const isValid = beforeSaveCell(this.state.data[rowIndex], fieldName, newVal, beforeSaveCellCB, props);
       if (isValid === false && typeof isValid !== 'undefined') {
         return invalid();
       } else if (isValid === Const.AWAIT_BEFORE_CELL_EDIT) {
@@ -884,13 +940,14 @@ class BootstrapTable extends Component {
     const { afterSaveCell } = this.props.cellEdit;
     const columns = this.getColumnsDescription(this.props);
     const fieldName = columns[colIndex].name;
+    const props = { rowIndex, colIndex };
     if (onCellEdit) {
       newVal = onCellEdit(this.state.data[rowIndex], fieldName, newVal);
     }
 
     if (this.allowRemote(Const.REMOTE_CELL_EDIT)) {
       if (afterSaveCell) {
-        afterSaveCell(this.state.data[rowIndex], fieldName, newVal);
+        afterSaveCell(this.state.data[rowIndex], fieldName, newVal, props);
       }
       return;
     }
@@ -904,7 +961,7 @@ class BootstrapTable extends Component {
     });
 
     if (afterSaveCell) {
-      afterSaveCell(this.state.data[rowIndex], fieldName, newVal);
+      afterSaveCell(this.state.data[rowIndex], fieldName, newVal, props);
     }
   }
 
@@ -923,7 +980,7 @@ class BootstrapTable extends Component {
 
     const afterHandleAddRow = errMsg => {
       if (isAsync) {
-        this.refs.toolbar.afterHandleSaveBtnClick(errMsg);
+        this.toolbar.afterHandleSaveBtnClick(errMsg);
       } else {
         return errMsg;
       }
@@ -1012,8 +1069,10 @@ class BootstrapTable extends Component {
 
     this.store.setSelectedRowKey([]);  // clear selected row key
 
-    if (this.allowRemote(Const.REMOTE_DROP_ROW) && afterDeleteRow) {
-      afterDeleteRow(dropRowKeys, dropRow);
+    if (this.allowRemote(Const.REMOTE_DROP_ROW)) {
+      if (afterDeleteRow) {
+        afterDeleteRow(dropRowKeys, dropRow);
+      }
       return;
     }
 
@@ -1141,8 +1200,8 @@ class BootstrapTable extends Component {
   handleSearch = searchText => {
     // Set search field if this function being called outside
     // but it's not necessary if calling fron inside.
-    if (this.refs.toolbar) {
-      this.refs.toolbar.setSearchInput(searchText);
+    if (this.toolbar) {
+      this.toolbar.setSearchInput(searchText);
     }
     const { autoCollapse: { search } } = this.props;
     const { onSearchChange, pageStartIndex } = this.props.options;
@@ -1210,7 +1269,8 @@ class BootstrapTable extends Component {
       return (
         <div className='react-bs-table-pagination'>
           <PaginationList
-            ref='pagination'
+            ref={ node => this.pagination = node }
+            version={ this.props.version }
             withFirstAndLast={ withFirstAndLast }
             alwaysShowAllBtns={ options.alwaysShowAllBtns }
             currPage={ this.state.currPage }
@@ -1290,7 +1350,7 @@ class BootstrapTable extends Component {
       return (
         <div className={ `react-bs-table-tool-bar ${ print ? '' : 'hidden-print' }` }>
           <ToolBar
-            ref='toolbar'
+            ref={ node => this.toolbar = node }
             version={ this.props.version }
             defaultSearch={ this.props.options.defaultSearch }
             clearSearch={ this.props.options.clearSearch }
@@ -1349,18 +1409,53 @@ class BootstrapTable extends Component {
     }
   }
 
+  renderTableFooter(footerData, footerFormatterReturnData, columns, colGroups) {
+    if (this.props.footer) {
+      let hideSelectColumn = true;
+      const { mode } = this.props.selectRow;
+      const isSelectRowDefined = Util.isSelectRowDefined(mode);
+      if (isSelectRowDefined) {
+        hideSelectColumn = this.props.selectRow.hideSelectColumn;
+      }
+      return (
+        <TableFooter
+          ref={ node => this.footer = node }
+          columns={ columns }
+          colGroups={ colGroups }
+          footerFormatterReturnData={ footerFormatterReturnData }
+          tableFooterClass={ this.props.tableFooterClass }
+          style={ this.props.headerStyle }
+          hideSelectColumn={ hideSelectColumn }
+          expandColumnVisible={ this.props.expandColumnOptions.expandColumnVisible }
+          bordered={ this.props.bordered }
+          condensed={ this.props.condensed }
+          isFiltered={ this.filter ? true : false }
+          showStickyColumn={ this.props.showStickyColumn }>
+          { footerData }
+        </TableFooter>
+      );
+    }
+    return null;
+  }
+
   _scrollTop = () => {
     const { scrollTop } = this.props;
     if (scrollTop === Const.SCROLL_TOP) {
-      this.refs.body.refs.container.scrollTop = 0;
+      this.body.container.scrollTop = 0;
     } else if (scrollTop === Const.SCROLL_BOTTOM) {
-      this.refs.body.refs.container.scrollTop = this.refs.body.refs.container.scrollHeight;
+      this.body.container.scrollTop = this.body.container.scrollHeight;
     } else if (typeof scrollTop === 'number' && !isNaN(scrollTop)) {
-      this.refs.body.refs.container.scrollTop = scrollTop;
+      this.body.container.scrollTop = scrollTop;
     }
   }
   _scrollHeader = (e) => {
-    this.refs.header.refs.container.scrollLeft = e.currentTarget.scrollLeft;
+    this.header.container.scrollLeft = e.currentTarget.scrollLeft;
+  }
+
+  _scrollFooter = (e) => {
+    if (this.props.footer) {
+      this.footer.container.scrollLeft = e.currentTarget.scrollLeft;
+    }
   }
 
   _adjustTable() {
@@ -1371,9 +1466,9 @@ class BootstrapTable extends Component {
   }
 
   _adjustHeaderWidth() {
-    const header = this.refs.header.getHeaderColGrouop();
-    const tbody = this.refs.body.refs.tbody;
-    const bodyHeader = this.refs.body.getHeaderColGrouop();
+    const header = this.header.getHeaderColGrouop();
+    const tbody = this.body.tbody;
+    const bodyHeader = this.body.getHeaderColGrouop();
     const firstRow = tbody.childNodes[0];
     const isScroll = tbody.parentNode.getBoundingClientRect().height >
       tbody.parentNode.parentNode.getBoundingClientRect().height;
@@ -1432,16 +1527,16 @@ class BootstrapTable extends Component {
     const { height } = this.props;
     let { maxHeight } = this.props;
     if ((typeof height === 'number' && !isNaN(height)) || height.indexOf('%') === -1) {
-      this.refs.body.refs.container.style.height =
-        parseFloat(height, 10) - this.refs.header.refs.container.offsetHeight + 'px';
+      this.body.container.style.height =
+        parseFloat(height, 10) - this.header.container.offsetHeight + 'px';
     }
     if (maxHeight) {
       maxHeight = typeof maxHeight === 'number' ?
         maxHeight :
         parseInt(maxHeight.replace('px', ''), 10);
 
-      this.refs.body.refs.container.style.maxHeight =
-        maxHeight - this.refs.header.refs.container.offsetHeight + 'px';
+      this.body.container.style.maxHeight =
+        maxHeight - this.header.container.offsetHeight + 'px';
     }
   }
 
@@ -1531,6 +1626,7 @@ BootstrapTable.propTypes = {
   cellEdit: PropTypes.shape({
     mode: PropTypes.string,
     blurToSave: PropTypes.bool,
+    blurToEscape: PropTypes.bool,
     beforeSaveCell: PropTypes.func,
     afterSaveCell: PropTypes.func,
     nonEditableRows: PropTypes.func
@@ -1553,6 +1649,7 @@ BootstrapTable.propTypes = {
   bodyContainerClass: PropTypes.string,
   tableHeaderClass: PropTypes.string,
   tableBodyClass: PropTypes.string,
+  tableFooterClass: PropTypes.string,
   options: PropTypes.shape({
     clearSearch: PropTypes.bool,
     sortName: PropTypes.oneOfType([ PropTypes.string, PropTypes.array ]),
@@ -1643,11 +1740,14 @@ BootstrapTable.propTypes = {
     beforeShowError: PropTypes.func,
     printToolBar: PropTypes.bool,
     insertFailIndicator: PropTypes.string,
-    noAutoBOM: PropTypes.bool
+    noAutoBOM: PropTypes.bool,
+    expandAll: PropTypes.bool,
+    hideRowOnExpand: PropTypes.bool
   }),
   fetchInfo: PropTypes.shape({
     dataTotalSize: PropTypes.number
   }),
+  renderAlert: PropTypes.bool,
   exportCSV: PropTypes.bool,
   csvFileName: PropTypes.oneOfType([ PropTypes.string, PropTypes.func ]),
   ignoreSinglePage: PropTypes.bool,
@@ -1662,8 +1762,10 @@ BootstrapTable.propTypes = {
     columnWidth: PropTypes.oneOfType([ PropTypes.number, PropTypes.string ]),
     expandColumnVisible: PropTypes.bool,
     expandColumnComponent: PropTypes.func,
+    expandedColumnHeaderComponent: PropTypes.func,
     expandColumnBeforeSelectColumn: PropTypes.bool
-  })
+  }),
+  footer: PropTypes.bool
 };
 BootstrapTable.defaultProps = {
   version: '3',
@@ -1674,6 +1776,7 @@ BootstrapTable.defaultProps = {
   expandColumnOptions: {
     expandColumnVisible: false,
     expandColumnComponent: undefined,
+    expandedColumnHeaderComponent: undefined,
     expandColumnBeforeSelectColumn: true
   },
   height: '100%',
@@ -1705,6 +1808,7 @@ BootstrapTable.defaultProps = {
   cellEdit: {
     mode: Const.CELL_EDIT_NONE,
     blurToSave: false,
+    blurToEscape: false,
     beforeSaveCell: undefined,
     afterSaveCell: undefined,
     nonEditableRows: undefined
@@ -1728,6 +1832,7 @@ BootstrapTable.defaultProps = {
   bodyContainerClass: null,
   tableHeaderClass: null,
   tableBodyClass: null,
+  tableFooterClass: null,
   options: {
     clearSearch: false,
     sortName: undefined,
@@ -1807,11 +1912,14 @@ BootstrapTable.defaultProps = {
     beforeShowError: undefined,
     printToolBar: true,
     insertFailIndicator: Const.INSERT_FAIL_INDICATOR,
-    noAutoBOM: true
+    noAutoBOM: true,
+    expandAll: false,
+    hideRowOnExpand: false
   },
   fetchInfo: {
     dataTotalSize: 0
   },
+  renderAlert: true,
   exportCSV: false,
   csvFileName: 'spreadsheet.csv',
   ignoreSinglePage: false,
@@ -1819,7 +1927,8 @@ BootstrapTable.defaultProps = {
     sort: Const.AUTO_COLLAPSE_WHEN_SORT,
     filter: Const.AUTO_COLLAPSE_WHEN_FILTER,
     search: Const.AUTO_COLLAPSE_WHEN_SEARCH
-  }
+  },
+  footer: false
 };
 
 export default BootstrapTable;

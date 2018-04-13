@@ -24,13 +24,13 @@ class TableHeaderColumn extends Component {
     }
 
     // If column not displaying the same dataField, reset the filter accordingly
-    if (nextProps.dataField !== this.props.dataField) {
+    if (nextProps.filter && nextProps.dataField !== this.props.dataField) {
       const emitter = nextProps.filter.emitter || {};
       const currentFilter = emitter.currentFilter || {};
       const filter = currentFilter[nextProps.dataField];
       const value = filter ? filter.value : '';
 
-      const { ref } = this.getFilters() || {};
+      const { ref } = this.getFilters(nextProps) || {};
       if (this.refs[ref]) {
         this.refs[ref].setState({ value });
       }
@@ -50,50 +50,50 @@ class TableHeaderColumn extends Component {
     filter.emitter.handleFilter(this.props.dataField, value, type, filter);
   }
 
-  getFilters() {
-    const { headerText, children } = this.props;
-    switch (this.props.filter.type) {
+  getFilters(props = this.props) {
+    const { headerText, children } = props;
+    switch (props.filter.type) {
     case Const.FILTER_TYPE.TEXT: {
       return (
-        <TextFilter ref='textFilter' { ...this.props.filter }
+        <TextFilter ref={ n => this.textFilter = n } { ...props.filter }
           columnName={ headerText || children } filterHandler={ this.handleFilter } />
       );
     }
     case Const.FILTER_TYPE.REGEX: {
       return (
-        <RegexFilter ref='regexFilter' { ...this.props.filter }
+        <RegexFilter ref={ n => this.regexFilter = n } { ...props.filter }
           columnName={ headerText || children } filterHandler={ this.handleFilter } />
       );
     }
     case Const.FILTER_TYPE.SELECT: {
       return (
-        <SelectFilter ref='selectFilter' { ...this.props.filter }
+        <SelectFilter ref={ n => this.selectFilter = n } { ...props.filter }
           columnName={ headerText || children } filterHandler={ this.handleFilter } />
       );
     }
     case Const.FILTER_TYPE.NUMBER: {
       return (
-        <NumberFilter ref='numberFilter' { ...this.props.filter }
+        <NumberFilter ref={ n => this.numberFilter = n } { ...props.filter }
           columnName={ headerText || children } filterHandler={ this.handleFilter } />
       );
     }
     case Const.FILTER_TYPE.DATE: {
       return (
-        <DateFilter ref='dateFilter' { ...this.props.filter }
+        <DateFilter ref={ n => this.dateFilter = n } { ...props.filter }
           columnName={ headerText || children } filterHandler={ this.handleFilter } />
       );
     }
     case Const.FILTER_TYPE.CUSTOM: {
-      const elm = this.props.filter.getElement(this.handleFilter,
-          this.props.filter.customFilterParameters);
+      const elm = props.filter.getElement(this.handleFilter,
+          props.filter.customFilterParameters);
 
-      return React.cloneElement(elm, { ref: 'customFilter' });
+      return React.cloneElement(elm, { ref: n => this.customFilter = n });
     }
     }
   }
 
   componentDidMount() {
-    this.refs['header-col'].setAttribute('data-field', this.props.dataField);
+    this.headerCol.setAttribute('data-field', this.props.dataField);
   }
 
   renderDefaultCaret(dataSort, isBootstrap4) {
@@ -173,7 +173,7 @@ class TableHeaderColumn extends Component {
       }
     }
     return (
-      <th ref='header-col'
+      <th ref={ node => this.headerCol = node }
           className={ classes }
           style={ thStyle }
           onClick={ this.handleColumnClick }
@@ -194,27 +194,27 @@ class TableHeaderColumn extends Component {
 
     switch (this.props.filter.type) {
     case Const.FILTER_TYPE.TEXT: {
-      this.refs.textFilter.cleanFiltered();
+      this.textFilter.cleanFiltered();
       break;
     }
     case Const.FILTER_TYPE.REGEX: {
-      this.refs.regexFilter.cleanFiltered();
+      this.regexFilter.cleanFiltered();
       break;
     }
     case Const.FILTER_TYPE.SELECT: {
-      this.refs.selectFilter.cleanFiltered();
+      this.selectFilter.cleanFiltered();
       break;
     }
     case Const.FILTER_TYPE.NUMBER: {
-      this.refs.numberFilter.cleanFiltered();
+      this.numberFilter.cleanFiltered();
       break;
     }
     case Const.FILTER_TYPE.DATE: {
-      this.refs.dateFilter.cleanFiltered();
+      this.dateFilter.cleanFiltered();
       break;
     }
     case Const.FILTER_TYPE.CUSTOM: {
-      this.refs.customFilter.cleanFiltered();
+      this.customFilter.cleanFiltered();
       break;
     }
     }
@@ -224,23 +224,23 @@ class TableHeaderColumn extends Component {
     if (!this.props.filter) return;
     switch (this.props.filter.type) {
     case Const.FILTER_TYPE.TEXT: {
-      this.refs.textFilter.applyFilter(val);
+      this.textFilter.applyFilter(val);
       break;
     }
     case Const.FILTER_TYPE.REGEX: {
-      this.refs.regexFilter.applyFilter(val);
+      this.regexFilter.applyFilter(val);
       break;
     }
     case Const.FILTER_TYPE.SELECT: {
-      this.refs.selectFilter.applyFilter(val);
+      this.selectFilter.applyFilter(val);
       break;
     }
     case Const.FILTER_TYPE.NUMBER: {
-      this.refs.numberFilter.applyFilter(val);
+      this.numberFilter.applyFilter(val);
       break;
     }
     case Const.FILTER_TYPE.DATE: {
-      this.refs.dateFilter.applyFilter(val);
+      this.dateFilter.applyFilter(val);
       break;
     }
     }
@@ -310,7 +310,7 @@ TableHeaderColumn.propTypes = {
   expandable: PropTypes.bool,
   tdAttr: PropTypes.object,
   editTdAttr: PropTypes.object,
-  tdStyle: PropTypes.object,
+  tdStyle: PropTypes.oneOfType([ PropTypes.func, PropTypes.object ]),
   thStyle: PropTypes.object,
   keyValidator: PropTypes.bool,
   defaultASC: PropTypes.bool
